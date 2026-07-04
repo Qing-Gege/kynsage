@@ -1,0 +1,313 @@
+/* Markdown 编辑器容器 */
+.markdown-editor-container {
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+.markdown-editor {
+  flex: 1;
+  overflow: auto;
+  background: var(--bg-elevated);
+}
+
+/* ============================================
+   Milkdown Crepe 主题适配 — 使用 CSS 变量覆盖
+   参考 FanBox 的实现
+   ============================================ */
+
+/* 直接在编辑器根元素设置 CSS 变量 — 参考 FanBox */
+.markdown-editor {
+  /* Crepe 内置的 CSS 变量 - 完整覆盖以适配主题 */
+  --crepe-color-background: transparent;
+  --crepe-color-on-background: var(--ink);
+  --crepe-color-on-surface: var(--ink);
+  --crepe-color-on-surface-variant: var(--ink-2);
+  --crepe-color-primary: var(--accent);
+  --crepe-color-secondary: var(--bg-panel);
+  --crepe-color-outline: var(--ink-2);  /* 用于 toolbar 图标 */
+  --crepe-color-hover: var(--bg-selected);
+  --crepe-color-selected: var(--accent);  /* 选中文字背景色 - 使用品牌赤陶红 */
+  --crepe-color-inline-area: var(--bg-panel);
+  --crepe-color-surface: var(--bg-elevated);
+  --crepe-color-surface-low: var(--bg-panel);
+  --crepe-color-inline-code: var(--accent);
+  --crepe-shadow-1: var(--shadow);
+  --crepe-shadow-2: var(--shadow);
+  /* --crepe-font-default / --crepe-font-title / --crepe-font-code
+     通过内联样式注入，跟随用户在设置中选择的字体 */
+}
+
+/* 强制 Toolbar 和其他浮动元素使用主题色 */
+.markdown-editor .milkdown-toolbar {
+  background: var(--bg-elevated) !important;
+  border: 1px solid var(--line) !important;
+  box-shadow: var(--shadow) !important;
+}
+
+.markdown-editor .milkdown-toolbar .toolbar-item svg {
+  color: var(--ink-2) !important;
+  fill: var(--ink-2) !important;
+}
+
+.markdown-editor .milkdown-toolbar .toolbar-item:hover svg {
+  color: var(--ink) !important;
+  fill: var(--ink) !important;
+}
+
+.markdown-editor .milkdown-toolbar .toolbar-item.active svg {
+  color: var(--accent) !important;
+  fill: var(--accent) !important;
+}
+
+.markdown-editor .milkdown-toolbar .divider {
+  background: var(--line) !important;
+}
+
+/* 选中文字背景 —— 中性高亮，与全局 ::selection / 文件行选中统一（去满铺 accent 的「Claude 味」） */
+.markdown-editor .ProseMirror ::selection {
+  background: var(--bg-selected) !important;
+}
+
+.markdown-editor .ProseMirror ::-moz-selection {
+  background: var(--bg-selected) !important;
+}
+
+.markdown-editor .ProseMirror *::selection {
+  background: var(--bg-selected) !important;
+}
+
+.markdown-editor .ProseMirror *::-moz-selection {
+  background: var(--bg-selected) !important;
+}
+
+.markdown-editor .milkdown,
+.markdown-editor .crepe {
+  background: transparent;
+  color: var(--ink);
+}
+
+/* ProseMirror 编辑器内边距与排版见文件末尾「排版精致化」段 */
+
+/* 微调样式 — 标题字号层级与节奏 */
+.markdown-editor h1,
+.markdown-editor h2,
+.markdown-editor h3,
+.markdown-editor h4,
+.markdown-editor h5,
+.markdown-editor h6 {
+  font-weight: 600;
+  line-height: 1.3;
+  text-wrap: balance;
+}
+
+.markdown-editor h1 {
+  font-size: 1.85em;
+  border-bottom: 1px solid var(--line);
+  padding-bottom: 0.3em;
+  margin: 32px 0 16px;
+}
+
+.markdown-editor h2 {
+  font-size: 1.45em;
+  border-bottom: 1px solid var(--line);
+  padding-bottom: 0.3em;
+  margin: 28px 0 14px;
+}
+
+.markdown-editor h3 {
+  font-size: 1.2em;
+  margin: 24px 0 12px;
+}
+
+.markdown-editor h4 {
+  font-size: 1em;
+  margin: 20px 0 10px;
+}
+
+.markdown-editor h5 {
+  font-size: 0.9em;
+  margin: 18px 0 8px;
+}
+
+.markdown-editor h6 {
+  font-size: 0.85em;
+  color: var(--ink-2);
+  margin: 18px 0 8px;
+}
+
+.markdown-editor ::selection {
+  background: var(--bg-selected);
+}
+
+/* ============================================
+   排版精致化
+   ============================================ */
+
+/* ProseMirror 内边距收敛到顶部，配合 max-width 居中
+   宽度放宽到 60rem：面板窄时正文贴边填充，宽时保留适度边距、避免超长行 */
+.markdown-editor .ProseMirror {
+  max-width: 60rem;
+  margin: 0 auto;
+  padding: 28px 32px 40vh;
+  line-height: 1.7;
+  font-size: 15px;
+  color: var(--ink);
+  text-wrap: pretty;
+}
+
+.markdown-editor .ProseMirror > :first-child {
+  margin-top: 0;
+}
+
+/* 段落与正文间距 */
+.markdown-editor .ProseMirror p {
+  margin: 0 0 14px;
+}
+
+/* 列表缩进与项间距 */
+.markdown-editor .ProseMirror ul,
+.markdown-editor .ProseMirror ol {
+  padding-left: 1.6em;
+  margin: 0 0 14px;
+}
+
+.markdown-editor .ProseMirror li {
+  margin: 4px 0;
+}
+
+.markdown-editor .ProseMirror li > p {
+  margin: 0;
+}
+
+/* 行内代码 */
+.markdown-editor .ProseMirror code {
+  background: var(--bg-panel);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-tight);
+  padding: 1px 5px;
+  font-size: 0.9em;
+}
+
+/* 代码块 */
+.markdown-editor pre {
+  border: 1px solid var(--line);
+  border-radius: var(--radius-relaxed);
+  background: var(--bg-panel);
+}
+
+.markdown-editor pre code {
+  background: transparent;
+  border: none;
+  padding: 0;
+}
+
+/* 引用块：全边框 + 背景 tint 辨识（不使用彩色侧边条） */
+.markdown-editor blockquote {
+  border: 1px solid var(--line);
+  border-left: 3px solid var(--accent);
+  background: var(--bg-panel);
+  border-radius: var(--radius-tight);
+  padding: 8px 16px;
+  margin: 0 0 14px;
+  color: var(--ink-2);
+}
+
+.markdown-editor blockquote p {
+  margin: 6px 0;
+}
+
+/* 表格 */
+.markdown-editor table {
+  border-collapse: collapse;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-relaxed);
+  overflow: hidden;
+}
+
+.markdown-editor th,
+.markdown-editor td {
+  border: 1px solid var(--line);
+  padding: 7px 12px;
+}
+
+.markdown-editor th {
+  background: var(--bg-panel);
+  font-weight: 600;
+}
+
+/* 图片 */
+.markdown-editor img {
+  max-width: 100%;
+  border-radius: var(--radius-relaxed);
+  border: 1px solid var(--line);
+}
+
+/* 分割线 */
+.markdown-editor hr {
+  border: none;
+  border-top: 1px solid var(--line);
+  margin: 24px 0;
+}
+
+/* 链接 */
+.markdown-editor .ProseMirror a {
+  color: var(--accent);
+  text-decoration: none;
+}
+.markdown-editor .ProseMirror a:hover {
+  text-decoration: underline;
+}
+
+/* ============================================
+   数学（KaTeX）与图表（Mermaid）适配
+   ============================================ */
+
+/* KaTeX 默认黑字，强制继承正文色以适配三套主题 */
+.markdown-editor .katex {
+  color: var(--ink);
+  font-size: 1.05em;
+}
+
+/* 块级公式：居中、可横向滚动，避免长公式溢出 */
+.markdown-editor .math-block,
+.markdown-editor .math-node[data-type="math_block"] {
+  overflow-x: auto;
+  padding: 8px 0;
+  text-align: center;
+}
+
+/* 数学节点选中态 */
+.markdown-editor .math-inline.ProseMirror-selectednode,
+.markdown-editor .math-block.ProseMirror-selectednode {
+  outline: 1px solid var(--accent);
+  border-radius: var(--radius-tight);
+  background: var(--bg-selected);
+}
+
+/* Mermaid 图表容器：居中、限制最大宽度 */
+.markdown-editor .mermaid {
+  display: flex;
+  justify-content: center;
+  margin: 4px 0 14px;
+  padding: 12px;
+  background: var(--bg-panel);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-relaxed);
+  overflow-x: auto;
+}
+
+.markdown-editor .mermaid svg {
+  max-width: 100%;
+  height: auto;
+}
+
+/* 图表/公式渲染失败时的兜底提示 */
+.markdown-editor .mermaid[data-error],
+.markdown-editor .math-error {
+  color: var(--danger);
+  font-size: 0.85em;
+  font-family: var(--crepe-font-code);
+}

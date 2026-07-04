@@ -1,0 +1,11 @@
+{
+  "files": [],
+  "references": [
+    { "path": "./packages/shared-types" },
+    { "path": "./packages/design-tokens" },
+    { "path": "./packages/ipc-contract" },
+    { "path": "./packages/core" },
+    { "path": "./apps/main" },
+    { "path": "./apps/renderer" }
+  ]
+}

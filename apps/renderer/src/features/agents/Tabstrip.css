@@ -1,0 +1,209 @@
+/* ═══════════════════════════════════════════════════════════════════
+   Tabstrip —— 单行 40px 顶栏：案件浏览器 tab + 新建同事 + 总览 + 窗口键
+   标签 = 一个案件（文件区 + Agent）。Chrome 式。
+   ═══════════════════════════════════════════════════════════════════ */
+.tabstrip {
+  height: 100%;
+  width: 100%;
+  background: var(--bg-chrome);
+  border-bottom: 1px solid var(--line);
+  display: flex;
+  align-items: stretch;
+  padding: 0 10px 0 8px;
+  gap: 6px;
+  -webkit-app-region: drag;          /* 空白处可拖窗 */
+  transition: background 0.45s, border-color 0.45s;
+}
+.tabstrip > *:not(.tab-fill) { -webkit-app-region: no-drag; }
+.tab-fill { flex: 1; align-self: stretch; }
+
+/* 标签组 */
+.tabs { display: flex; align-items: stretch; gap: 4px; min-width: 0; flex: 1; overflow-x: auto; overflow-y: hidden; }
+.tab {
+  display: flex; align-items: center; gap: 8px;
+  min-width: 128px; max-width: 210px;
+  margin: 7px 0; padding: 0 8px 0 11px;
+  background: transparent;
+  border: 1px solid transparent;
+  border-radius: 7px;
+  cursor: pointer; position: relative;
+  transition: background 0.15s, border-color 0.15s;
+}
+.tab:hover { background: var(--bg-panel); }
+.tab.active {
+  background: var(--bg-elevated);
+  border-color: var(--line);
+}
+.tab.active::after {
+  content: ""; position: absolute; left: 9px; right: 9px; top: -1px;
+  height: 2px; background: var(--accent); border-radius: 2px;
+}
+.tab-name {
+  flex: 1; min-width: 0;
+  font-size: var(--fs-md); font-weight: 500; color: var(--ink-2);
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.tab.active .tab-name { color: var(--ink); }
+
+/* 状态文字 chip —— 让标签直接说人话；hover 时让位给关闭键 */
+.tab-state {
+  flex: none;
+  font-size: var(--fs-micro); font-weight: 600; letter-spacing: 0.02em;
+  white-space: nowrap;
+}
+.tab-state.run  { color: var(--ok); }
+.tab-state.wait { color: var(--warn); }
+.tab-state.idle { color: var(--accent); }
+.tab-state.exit { color: var(--ink-4); }
+.tab:hover .tab-state, .tab.active .tab-state { display: none; }
+
+.tab-close {
+  width: 15px; height: 15px; flex: none;
+  display: grid; place-items: center; border-radius: 3px;
+  background: transparent; border: none; cursor: pointer;
+  color: var(--ink-4); opacity: 0;
+  transition: opacity 0.12s, background 0.12s, color 0.12s;
+}
+.tab:hover .tab-close, .tab.active .tab-close { opacity: 1; }
+.tab-close:hover { background: var(--line-strong); color: var(--ink); }
+.tab-close svg { width: 8px; height: 8px; }
+
+/* 状态点 —— 信号灯：绿run / 琥珀wait / 灰exit */
+.agent-dot {
+  width: 8px; height: 8px; border-radius: 50%; flex: none;
+  position: relative;
+}
+.agent-dot.run  { background: var(--ok); }
+.agent-dot.wait { background: var(--warn); }
+.agent-dot.exit { background: var(--idle); opacity: 0.7; }
+/* 待命 = 已回复·该你了：用品牌色 + 柔光，抓眼球 */
+.agent-dot.idle { background: var(--accent); box-shadow: 0 0 5px color-mix(in srgb, var(--accent) 55%, transparent); }
+/* 运行态——极轻呼吸环，非霓虹 glow */
+.agent-dot.run::after {
+  content: ""; position: absolute; inset: -3px;
+  border-radius: 50%; border: 1px solid var(--ok);
+  opacity: 0; animation: tab-ring 2.6s ease-out infinite;
+}
+@keyframes tab-ring {
+  0% { opacity: 0.5; transform: scale(0.7); }
+  70%, 100% { opacity: 0; transform: scale(1.5); }
+}
+.agent-dot.wait { animation: tab-pulse 1.8s ease-in-out infinite; }
+@keyframes tab-pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.42; } }
+
+/* 待确认 = Claude 卡在权限询问、被阻塞：整张标签泛琥珀柔光并缓慢呼吸，多开时背景标签也抓得住眼。
+   用 --warn 琥珀 token + color-mix 取低饱和 tint，克制、与信号灯体系一致。 */
+.tab.is-awaiting {
+  border-color: color-mix(in srgb, var(--warn) 55%, var(--line));
+  animation: tab-awaiting 1.8s ease-in-out infinite;
+}
+@keyframes tab-awaiting {
+  0%, 100% {
+    background: color-mix(in srgb, var(--warn) 8%, transparent);
+    box-shadow: 0 0 0 1px color-mix(in srgb, var(--warn) 30%, transparent),
+                0 0 6px color-mix(in srgb, var(--warn) 18%, transparent);
+  }
+  50% {
+    background: color-mix(in srgb, var(--warn) 18%, transparent);
+    box-shadow: 0 0 0 1px color-mix(in srgb, var(--warn) 55%, transparent),
+                0 0 12px color-mix(in srgb, var(--warn) 40%, transparent);
+  }
+}
+/* 待确认态下「待确认」文字常驻——即便激活/hover 也不被 :58 的规则藏掉 */
+.tab.is-awaiting .tab-state { display: inline !important; }
+
+/* 尊重「减少动态效果」：不闪，但保留静态琥珀 tint，仍醒目 */
+@media (prefers-reduced-motion: reduce) {
+  .tab.is-awaiting {
+    animation: none;
+    background: color-mix(in srgb, var(--warn) 16%, transparent);
+    box-shadow: 0 0 0 1px color-mix(in srgb, var(--warn) 45%, transparent);
+  }
+}
+
+/* 末尾新建同事 + split —— 主操作，实心 accent，醒目 */
+.tab-new {
+  display: flex; align-items: center; align-self: center; flex: none;
+  position: relative;
+}
+.tab-new .b {
+  height: 34px; padding: 0 16px;
+  display: flex; align-items: center; gap: 6px;
+  background: var(--accent);
+  border: none;
+  border-radius: 7px 0 0 7px;
+  color: var(--accent-ink); cursor: pointer;
+  font-family: inherit; font-size: var(--fs-sm); font-weight: 600; letter-spacing: 0.02em;
+  white-space: nowrap;
+  transition: filter 0.15s, transform 0.08s;
+}
+.tab-new .b:hover { filter: brightness(1.08); }
+.tab-new .b:active { transform: translateY(0.5px); }
+.tab-new .b svg { width: 14px; height: 14px; }
+.tab-new .s {
+  width: 24px; height: 34px;
+  background: var(--accent);
+  border: none; border-left: 1px solid color-mix(in srgb, var(--accent-ink) 20%, transparent);
+  border-radius: 0 7px 7px 0;
+  color: var(--accent-ink); cursor: pointer;
+  display: grid; place-items: center;
+  transition: filter 0.15s;
+}
+.tab-new .s:hover { filter: brightness(1.08); }
+.tab-new .s svg { width: 10px; height: 10px; opacity: 0.9; }
+
+.tab-new .split-menu {
+  position: absolute;
+  top: 100%; right: 0; margin-top: 4px;
+  background: var(--bg-elevated);
+  border: 1px solid var(--line-strong);
+  border-radius: 6px;
+  box-shadow: var(--shadow);
+  padding: 4px;
+  min-width: max-content;
+  z-index: 40;
+}
+.tab-new .split-menu button {
+  display: block; width: 100%; text-align: left; white-space: nowrap;
+  background: none; border: none; cursor: pointer;
+  font-family: inherit; font-size: var(--fs-sm);
+  color: var(--ink-2); padding: 7px 9px; border-radius: 4px;
+}
+.tab-new .split-menu button:hover { background: var(--bg-app); color: var(--ink); }
+
+/* 总览（tabs⇄tile）切换 */
+.view-toggle {
+  align-self: center; flex: none; margin-left: 4px;
+  display: flex; align-items: center; gap: 6px;
+  height: 26px; padding: 0 11px 0 9px;
+  background: transparent;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  color: var(--ink-3); cursor: pointer;
+  font-family: inherit; font-size: var(--fs-xs); font-weight: 600; letter-spacing: 0.04em;
+  transition: background 0.15s, color 0.15s, border-color 0.15s;
+}
+.view-toggle svg { width: 13px; height: 13px; }
+.view-toggle:hover { color: var(--ink); border-color: var(--line-strong); }
+.view-toggle.on {
+  background: var(--bg-elevated); color: var(--accent);
+  border-color: color-mix(in srgb, var(--accent) 45%, var(--line));
+}
+
+/* 窗口控制 —— min / max / close（真实功能键） */
+.win-ctl {
+  display: flex; align-items: center; gap: 2px;
+  align-self: center;
+  margin-left: 4px; padding-left: 10px;
+  border-left: 1px solid var(--line);
+}
+.win-btn {
+  width: 28px; height: 26px;
+  display: grid; place-items: center;
+  background: transparent; border: none;
+  border-radius: var(--radius-default);
+  color: var(--ink-3); cursor: pointer;
+  transition: background 0.12s, color 0.12s;
+}
+.win-btn:hover { background: var(--bg-elevated); color: var(--ink); }
+.win-close:hover { background: var(--danger) !important; color: #fff !important; }

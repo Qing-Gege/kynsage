@@ -1,0 +1,47 @@
+{
+  "name": "marshal",
+  "version": "0.0.10",
+  "type": "module",
+  "private": true,
+  "description": "狗头军师 / Kynsage — AI Agent 指挥驾驶舱",
+  "author": "QingGege",
+  "engines": {
+    "node": ">=22"
+  },
+  "packageManager": "pnpm@11.8.0",
+  "dependencies": {
+    "node-pty": "^1.1.0"
+  },
+  "imports": {
+    "#marshal/core": "./packages/core/dist/index.js",
+    "#marshal/ipc-contract": "./packages/ipc-contract/dist/index.js",
+    "#marshal/shared-types": "./packages/shared-types/dist/index.js",
+    "#marshal/design-tokens": "./packages/design-tokens/dist/index.js"
+  },
+  "scripts": {
+    "dev": "concurrently -k -n vite,main -c cyan,yellow \"pnpm --filter @marshal/renderer dev\" \"wait-on http://localhost:5173 && pnpm --filter @marshal/main dev\"",
+    "build": "pnpm -r build",
+    "build:win": "pnpm build && electron-builder --win --x64 --config electron-builder.json",
+    "build:mac": "pnpm build && electron-builder --mac --config electron-builder.json",
+    "build:linux": "pnpm build && electron-builder --linux --config electron-builder.json",
+    "typecheck": "pnpm -r typecheck",
+    "lint": "eslint .",
+    "format": "prettier --write .",
+    "test": "vitest run",
+    "test:watch": "vitest"
+  },
+  "devDependencies": {
+    "@types/node": "^22.10.0",
+    "@typescript-eslint/eslint-plugin": "^8.21.0",
+    "@typescript-eslint/parser": "^8.21.0",
+    "concurrently": "^9.1.2",
+    "electron": "^33.4.11",
+    "electron-builder": "^26.15.3",
+    "eslint": "^9.18.0",
+    "fs-extra": "^11.3.5",
+    "prettier": "^3.4.2",
+    "typescript": "^5.7.3",
+    "vitest": "^3.0.4",
+    "wait-on": "^8.0.2"
+  }
+}

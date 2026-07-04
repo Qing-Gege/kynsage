@@ -1,0 +1,34 @@
+/* 内置等宽字体（随应用打包，不依赖系统安装）。
+ *
+ * Vite 解析下面的相对 url、指纹化后输出到 dist/assets，electron-builder 随
+ * apps/renderer/dist 一并打包。两款字体均为 SIL OFL 1.1，见同目录 OFL.txt。
+ *
+ * - Maple Mono NL CN：无连字中文版，含 Regular(400) + Bold(700)
+ * - LXGW Bright Code GB：仅 Regular(400)（该字族无 Bold 切，粗体由系统合成）
+ *
+ * font-family 名必须与字体内部 name 表完全一致，否则设置里的下拉 value 匹配不上、回退系统字体。
+ */
+
+@font-face {
+  font-family: 'Maple Mono NL CN';
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url('./MapleMonoNL-CN-Regular.woff2') format('woff2');
+}
+
+@font-face {
+  font-family: 'Maple Mono NL CN';
+  font-style: normal;
+  font-weight: 700;
+  font-display: swap;
+  src: url('./MapleMonoNL-CN-Bold.woff2') format('woff2');
+}
+
+@font-face {
+  font-family: 'LXGW Bright Code GB';
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url('./LXGWBrightCodeGB-Regular.woff2') format('woff2');
+}

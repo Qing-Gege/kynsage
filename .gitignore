@@ -1,0 +1,56 @@
+# dependencies
+node_modules/
+.pnpm-store/
+
+# build output
+dist/
+out/
+.vite/
+release/
+*.tsbuildinfo
+
+# TS compiled artifacts leaking into src/ (see memory: vite-js-overlay-issue)
+packages/*/src/**/*.js
+packages/*/src/**/*.js.map
+packages/*/src/**/*.d.ts.map
+
+# env / local config
+.env
+.env.local
+.env.*.local
+
+# editor
+.vscode/
+.idea/
+*.swp
+.DS_Store
+
+# logs
+*.log
+npm-debug.log*
+pnpm-debug.log*
+logs/
+
+# test coverage
+coverage/
+.nyc_output/
+
+# OS
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+
+# Electron
+electron-builder-output/
+
+# Claude Code skill runtime
+.impeccable/
+
+# scratch / local test files
+markdown-test.md
+
+# design exploration scratch (not shipped)
+design-demos/
+
+# 原始编号截图(已复制为语义命名)
+docs/images/0*.png

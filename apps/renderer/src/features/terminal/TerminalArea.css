@@ -1,0 +1,281 @@
+.terminal-area-container {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  min-height: 0;
+  background: var(--bg-terminal);
+  overflow: hidden;
+  position: relative; /* 锚定 launcher 覆盖层 */
+}
+
+/* 「待确认」边缘呼吸 —— 借 fanbox termAwait，用 marshal accent + sig-pulse 同节奏。
+   agent 等用户确认时，终端区边缘内辉光轻呼吸，主动叫回注意力（PRODUCT.md 强提示）。
+   ::after 不挡点击、不改布局；z-index 低于 launcher 覆盖层(20)。 */
+.terminal-area-container.is-awaiting::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: 15;
+  pointer-events: none;
+  border-radius: inherit;
+  animation: term-await 1.8s ease-in-out infinite;
+}
+@keyframes term-await {
+  0%, 100% { box-shadow: inset 0 0 0 1px transparent; }
+  50% {
+    box-shadow:
+      inset 0 0 0 2px var(--accent),
+      inset 0 0 22px color-mix(in srgb, var(--accent) 28%, transparent);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .terminal-area-container.is-awaiting::after {
+    animation: none;
+    box-shadow: inset 0 0 0 2px var(--accent);
+  }
+}
+
+/* 工作区 launcher 覆盖层 —— 浮在终端之上，保活底层 xterm */
+.launcher-overlay {
+  position: absolute;
+  top: 44px; /* 让顶部 term-bar 仍可见 */
+  left: 0; right: 0; bottom: 0;
+  z-index: 20;
+  display: flex;
+  background: color-mix(in srgb, var(--bg-terminal) 92%, transparent);
+  backdrop-filter: blur(2px);
+  animation: launcher-in 0.12s ease-out;
+}
+@keyframes launcher-in {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+@media (prefers-reduced-motion: reduce) { .launcher-overlay { animation: none; } }
+
+/* 覆盖层内的 launcher：占满、锚定 × 关闭按钮 */
+.terminal-placeholder.is-overlay { position: relative; width: 100%; }
+.ph-close {
+  position: absolute;
+  top: 14px; right: 16px;
+  width: 22px; height: 22px;
+  display: flex; align-items: center; justify-content: center;
+  background: transparent;
+  border: none;
+  border-radius: 4px;
+  color: var(--term-dim);
+  cursor: pointer;
+  transition: background 0.12s, color 0.12s;
+}
+.ph-close:hover { background: color-mix(in srgb, var(--term-ink) 10%, transparent); color: var(--term-ink); }
+.ph-close:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+
+/* launcher 顶部当前目录路径 */
+.ph-path {
+  font-size: var(--fs-xs);
+  color: var(--term-dim);
+  max-width: 60%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  direction: rtl;
+  text-align: center;
+}
+
+/* ---- instrument term bar ---- */
+.term-bar {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-shrink: 0;
+  height: 44px;
+  padding: 0 18px;
+  background: var(--bg-terminal);
+  border-bottom: 1px solid color-mix(in srgb, var(--term-ink) 14%, transparent);
+}
+
+.term-bar-name {
+  font-size: var(--fs-sm);
+  font-weight: 600;
+  color: var(--term-ink);
+}
+
+.term-bar-path {
+  font-size: var(--fs-xs);
+  color: var(--term-dim);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  max-width: 46%;
+  direction: rtl;
+  text-align: left;
+}
+
+.term-bar-spacer { flex: 1; }
+
+.term-bar-tag {
+  color: var(--term-dim);
+  border: 1px solid color-mix(in srgb, var(--term-dim) 40%, transparent);
+  padding: 2px 7px;
+  border-radius: 3px;
+}
+
+/* ---- signal lights ---- */
+.sig {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  flex-shrink: 0;
+  background: var(--term-dim);
+}
+.sig--run {
+  background: var(--ok);
+  box-shadow: 0 0 5px color-mix(in srgb, var(--ok) 70%, transparent);
+  animation: sig-pulse 1.4s ease-in-out infinite;
+}
+.sig--wait {
+  background: var(--warn);
+  box-shadow: 0 0 5px color-mix(in srgb, var(--warn) 70%, transparent);
+  animation: sig-pulse 1.5s ease-in-out infinite;
+}
+.sig--exit { background: var(--idle); opacity: 0.7; }
+/* 待命 = 已回复·该你了 */
+.sig--idle { background: var(--accent); box-shadow: 0 0 5px color-mix(in srgb, var(--accent) 60%, transparent); }
+
+@keyframes sig-pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.35; }
+}
+@media (prefers-reduced-motion: reduce) { .sig--wait, .sig--run { animation: none; } }
+
+/* ---- placeholder ---- */
+.terminal-placeholder {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  gap: 13px;
+  /* 居中区域偏下，用底部内边距把内容整体上提（空态启动页 + 覆盖层共用） */
+  padding-bottom: 15vh;
+}
+
+.terminal-placeholder-icon { color: var(--term-dim); opacity: 0.55; }
+
+.terminal-placeholder p {
+  font-size: 14px;
+  color: var(--term-dim);
+  text-align: center;
+}
+
+/* 主操作：实心填充，最突出 */
+.terminal-placeholder-cta {
+  margin-top: 2px;
+  padding: 10px 26px;
+  background: var(--accent);
+  border: 1px solid var(--accent);
+  border-radius: var(--radius-default);
+  color: var(--accent-ink);
+  font-size: 14.5px;
+  font-weight: 600;
+  cursor: pointer;
+  box-shadow: 0 3px 12px color-mix(in srgb, var(--accent) 32%, transparent);
+  transition: background 0.15s, box-shadow 0.15s, transform 0.1s;
+}
+.terminal-placeholder-cta:hover {
+  background: color-mix(in srgb, var(--accent) 88%, white);
+  box-shadow: 0 4px 16px color-mix(in srgb, var(--accent) 42%, transparent);
+}
+.terminal-placeholder-cta:active { transform: translateY(1px); }
+.terminal-placeholder-cta:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+
+/* 「有历史」动作组 */
+.ph-actions { margin-top: 6px; display: flex; align-items: center; gap: 12px; flex-wrap: wrap; justify-content: center; }
+/* 次操作：可见底色 + 清晰描边，读起来是实在的按钮而非弱化的轮廓 */
+.ph-cta-ghost {
+  padding: 10px 20px;
+  background: color-mix(in srgb, var(--term-ink) 8%, transparent);
+  border: 1px solid color-mix(in srgb, var(--term-ink) 32%, transparent);
+  border-radius: var(--radius-default);
+  color: var(--term-ink);
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.15s, border-color 0.15s, color 0.15s;
+}
+.ph-cta-ghost:hover { background: color-mix(in srgb, var(--term-ink) 16%, transparent); border-color: color-mix(in srgb, var(--term-ink) 52%, transparent); }
+.ph-cta-ghost:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.ph-hist-wrap { position: relative; display: inline-flex; }
+
+/* term-bar 关闭按钮 */
+.term-close-btn {
+  width: 26px; height: 26px;
+  display: grid; place-items: center;
+  background: transparent;
+  border: 1px solid color-mix(in srgb, var(--term-ink) 20%, transparent);
+  border-radius: 5px;
+  color: var(--term-dim);
+  cursor: pointer;
+  transition: background 0.13s, color 0.13s, border-color 0.13s;
+}
+.term-close-btn:hover { background: color-mix(in srgb, var(--term-ink) 7%, transparent); color: var(--term-ink); border-color: color-mix(in srgb, var(--term-ink) 38%, transparent); }
+
+/* ---- content ---- */
+.terminal-content {
+  flex: 1;
+  min-height: 0;
+  position: relative;
+  overflow: hidden;
+}
+
+.terminal-content.tile-mode {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(480px, 1fr));
+  grid-auto-rows: 1fr;
+  gap: 1px;
+  background: color-mix(in srgb, var(--term-ink) 14%, transparent);
+}
+
+.terminal-pane {
+  width: 100%;
+  height: 100%;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  background: var(--bg-terminal);
+  overflow: hidden;
+}
+
+.pane-label {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  height: 26px;
+  padding: 0 10px;
+  flex-shrink: 0;
+  border-bottom: 1px solid color-mix(in srgb, var(--term-ink) 12%, transparent);
+}
+.pane-label-name { font-size: var(--fs-sm); color: var(--term-ink); font-weight: 500; }
+.pane-label-path {
+  font-size: var(--fs-micro);
+  color: var(--term-dim);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.pane-term {
+  flex: 1;
+  min-height: 0;
+  min-width: 0;
+  padding: 8px;
+  overflow: hidden;
+  position: relative;
+}
+/* xterm 挂载的宿主 div（.term-host，open() 后同时带 .xterm）用绝对定位锁进
+   .pane-term 的 8px 内框：inset 直接给出确定宽高，FitAddon 据此算 cols/rows，
+   杜绝 100% + padding 的取整误差导致 .xterm-screen 短暂超出边缘。 */
+.pane-term > .term-host {
+  position: absolute;
+  inset: 8px;
+  overflow: hidden;
+}

@@ -1,0 +1,28 @@
+{
+  "name": "@marshal/main",
+  "version": "0.0.0",
+  "private": true,
+  "main": "./dist/index.js",
+  "type": "module",
+  "scripts": {
+    "dev": "node build.mjs && electron .",
+    "build": "node build.mjs",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@marshal/ipc-contract": "workspace:*",
+    "@marshal/shared-types": "workspace:*",
+    "@trpc/server": "^11.18.0",
+    "chokidar": "^5.0.0",
+    "electron-trpc": "^0.7.1",
+    "node-pty": "^1.1.0"
+  },
+  "devDependencies": {
+    "@electron/rebuild": "^4.0.4",
+    "@types/node": "^22.10.0",
+    "electron": "^33.2.0",
+    "electron-builder": "^26.15.3",
+    "esbuild": "^0.25.12",
+    "typescript": "^5.7.3"
+  }
+}

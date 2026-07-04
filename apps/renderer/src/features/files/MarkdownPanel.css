@@ -1,0 +1,157 @@
+/* Markdown 面板 */
+.markdown-panel {
+  position: fixed;
+  top: 40px; /* 落到顶部 tabstrip 标题栏下方，不遮挡顶栏 */
+  /* 左缘对齐 agent 区左缘、右到屏幕右缘 —— 宽度恒等于 agent 区，展开/收起两态都成立。
+     旧写法 width:var(--agent-w) 在收起态(agent 列变 1fr)会比 agent 区宽，编辑器越界。 */
+  left: var(--agent-left);
+  right: 0;
+  bottom: 0;
+  background: var(--bg-elevated);
+  border-left: 1px solid var(--line);
+  box-shadow: var(--shadow);
+  display: flex;
+  flex-direction: column;
+  z-index: 100;
+}
+
+.markdown-panel-header {
+  height: 40px; /* 与右侧终端区 .term-bar 同高，两行对齐 */
+  border-bottom: 1px solid var(--line);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 10px 0 16px;
+  flex-shrink: 0;
+  background: var(--bg-panel);
+}
+
+.markdown-panel-title {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--ink);
+  line-height: 1;
+  min-width: 0;
+}
+
+.markdown-panel-title svg {
+  color: var(--ink-3);
+  flex-shrink: 0;
+}
+
+.markdown-panel-name {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* 保存状态指示 */
+.markdown-panel-status {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-size: var(--fs-xs);
+  font-weight: 400;
+  color: var(--ink-3);
+  flex-shrink: 0;
+  margin-left: 2px;
+}
+
+.markdown-panel-status-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--ink-3);
+  transition: background 0.2s;
+}
+
+/* 未保存：唯一需要主动提示的状态，用 warn */
+.markdown-panel-status.is-dirty {
+  color: var(--warn);
+}
+.markdown-panel-status.is-dirty .markdown-panel-status-dot {
+  background: var(--warn);
+}
+
+/* 保存中：中性脉冲 */
+.markdown-panel-status.is-saving {
+  color: var(--ink-2);
+}
+.markdown-panel-status.is-saving .markdown-panel-status-dot {
+  background: var(--ink-2);
+  animation: markdown-pulse 1.1s ease-in-out infinite;
+}
+
+/* 已保存：安静的常态，不抢注意力（不长驻饱和色） */
+.markdown-panel-status.is-saved {
+  color: var(--ink-3);
+}
+.markdown-panel-status.is-saved .markdown-panel-status-dot {
+  background: var(--ink-4);
+}
+
+@keyframes markdown-pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.35; }
+}
+
+.markdown-panel-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+/* 关闭按钮 —— 易点（44px 命中区），hover 克制：图标转 danger 语义，不整块填色 */
+.markdown-panel-close {
+  width: 30px;
+  height: 30px;
+  display: grid;
+  place-items: center;
+  background: transparent;
+  border: 1px solid transparent;
+  border-radius: var(--radius-default);
+  color: var(--ink-2);
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s, border-color 0.15s, transform 0.08s;
+}
+
+.markdown-panel-close:hover {
+  background: var(--bg-selected);
+  border-color: var(--line-strong);
+  color: var(--danger);
+}
+
+.markdown-panel-close:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 1px;
+}
+
+.markdown-panel-close:active {
+  transform: scale(0.92);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .markdown-panel-status.is-saving .markdown-panel-status-dot {
+    animation: none;
+  }
+  .markdown-panel-close:active {
+    transform: none;
+  }
+}
+
+.markdown-panel-body {
+  flex: 1;
+  overflow: hidden;
+}
+
+.markdown-panel-loading {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 200px;
+  color: var(--ink-3);
+  font-size: 13px;
+}

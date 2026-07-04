@@ -1,0 +1,190 @@
+.files-area {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  background: var(--bg-sidebar);
+  overflow: hidden;
+  position: relative;
+}
+/* 文件区可聚焦以接收 Ctrl/Cmd+C·V，但不画焦点框 */
+.files-area:focus,
+.files-area:focus-visible {
+  outline: none;
+}
+/* 从系统拖入文件时的高亮 */
+.files-area.is-drop::after {
+  content: "松手即可添加到当前文件夹";
+  position: absolute;
+  inset: 8px;
+  z-index: 5;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 13px;
+  color: var(--accent);
+  background: color-mix(in srgb, var(--accent) 8%, var(--bg-sidebar));
+  border: 2px dashed var(--accent);
+  border-radius: 10px;
+  pointer-events: none;
+}
+
+/* ---- head: breadcrumb only (sort/hidden controls retired per prototype) ---- */
+.files-head {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  height: 44px;
+  padding: 0 16px;
+  border-bottom: 1px solid var(--line);
+}
+
+/* 收起/展开侧边栏按钮（面包屑最左） */
+.files-collapse-btn {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  border: 1px solid var(--line);
+  background: var(--bg-app);
+  border-radius: 6px;
+  color: var(--ink-3);
+  cursor: pointer;
+  transition: background 0.12s, color 0.12s, border-color 0.12s;
+}
+.files-collapse-btn:hover { background: var(--bg-elevated); color: var(--accent); border-color: var(--line-strong); }
+
+.crumbs {
+  display: flex;
+  align-items: center;
+  min-width: 0;
+  overflow: hidden;
+}
+
+.crumb-seg { display: inline-flex; align-items: center; min-width: 0; }
+
+.crumb {
+  border: 0;
+  background: none;
+  padding: 2px 4px;
+  font-size: 14px;
+  color: var(--ink-3);
+  cursor: pointer;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 160px;
+  border-radius: var(--radius-default);
+}
+.crumb:hover { color: var(--ink); background: var(--bg-elevated); }
+.crumb.is-current { color: var(--ink); font-weight: 500; }
+.crumb-sep { color: var(--ink-4); font-size: var(--fs-xs); padding: 0 1px; }
+
+/* 收藏星标按钮 */
+.fav-btn {
+  flex-shrink: 0;
+  display: flex; align-items: center; justify-content: center;
+  width: 24px; height: 24px;
+  background: none; border: none; cursor: pointer; border-radius: 4px;
+  color: var(--ink-3);
+  transition: color 0.12s, background 0.12s;
+}
+.fav-btn:hover { color: var(--warn); background: var(--bg-elevated); }
+.fav-btn.on { color: var(--warn); }
+
+/* ---- list ---- */
+.files-body { flex: 1; overflow-y: auto; padding: 8px 10px 14px; }
+
+.files-placeholder {
+  text-align: center;
+  padding: 48px 0;
+  color: var(--ink-4);
+  font-size: 13px;
+}
+
+.files-list { list-style: none; margin: 0; padding: 0; }
+
+.file-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 8px 12px;
+  cursor: pointer;
+  border-radius: var(--radius-default);
+}
+.file-row:hover { background: var(--bg-elevated); }
+/* 选中 = 中性底 + 左 2px 赤陶红细条，与侧栏 nav 选中同一套语言（去 accent 铺底的「Claude 味」） */
+.file-row.is-selected { background: var(--bg-selected); position: relative; }
+.file-row.is-selected::before {
+  content: "";
+  position: absolute;
+  left: 0; top: 5px; bottom: 5px;
+  width: 2px;
+  background: var(--accent);
+  border-radius: 2px;
+}
+.file-row.is-cut { opacity: 0.5; }
+.file-row:focus-visible { outline: 2px solid var(--accent); outline-offset: -2px; }
+
+/* 行内重命名输入框 */
+.fn-edit {
+  flex: 1;
+  min-width: 0;
+  height: 24px;
+  padding: 0 7px;
+  font-size: 14px;
+  color: var(--ink);
+  background: var(--bg-app);
+  border: 1px solid var(--accent);
+  border-radius: 4px;
+  outline: none;
+}
+
+.file-ic {
+  flex-shrink: 0;
+  width: 18px;
+  height: 18px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--ink-3);
+}
+/* 文件夹：柔和暖色 —— 暖、与文件中性 ink 有别，但不喊叫 */
+.file-row.is-dir .file-ic { color: color-mix(in srgb, var(--accent) 52%, var(--ink-3)); }
+/* 原生文件图标：收敛霓虹饱和，落进暖中性场 */
+.file-icon-img {
+  width: 16px;
+  height: 16px;
+  object-fit: contain;
+  filter: saturate(0.72) contrast(0.98);
+}
+
+/* 选中 = 唯一让赤陶红出场的地方之一：图标/文件名转满强调色 */
+.file-row.is-selected .file-ic { color: var(--accent); }
+.file-row.is-selected .fn,
+.file-row.is-selected .fn-base { color: var(--accent); }
+/* 选中的原生文件图标恢复本色 —— 聚焦时还原真实类型识别 */
+.file-row.is-selected .file-icon-img { filter: none; }
+
+.file-main { display: flex; flex-direction: column; gap: 2px; min-width: 0; flex: 1; }
+
+.file-line1 { display: flex; align-items: center; gap: 8px; min-width: 0; flex-wrap: wrap; }
+
+.fn {
+  display: inline;
+  min-width: 0;
+  font-size: 14px;
+  color: var(--ink);
+}
+.fn-base {
+  white-space: normal;
+  overflow-wrap: anywhere;
+}
+.fn-ext { flex-shrink: 0; color: var(--ink-3); }
+.fn-slash { color: var(--ink-4); }
+.file-row.is-dir .fn-base { font-weight: 500; }
+
+.file-line2 { font-size: var(--fs-xs); color: var(--ink-4); font-variant-numeric: tabular-nums; }
+.meta-dot { padding: 0 5px; opacity: 0.6; }

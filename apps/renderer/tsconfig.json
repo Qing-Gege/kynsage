@@ -1,0 +1,25 @@
+{
+  "extends": "../../tsconfig.base.json",
+  "compilerOptions": {
+    "target": "ES2020",
+    "lib": ["ES2020", "DOM", "DOM.Iterable"],
+    "module": "ESNext",
+    "moduleResolution": "Bundler",
+    "jsx": "react-jsx",
+    "isolatedModules": true,
+    "skipLibCheck": true,
+    "noEmit": true,
+    "baseUrl": ".",
+    "paths": {
+      "@marshal/core": ["../../packages/core/src"],
+      "@marshal/core/*": ["../../packages/core/src/*"],
+      "@marshal/ipc-contract": ["../../packages/ipc-contract/src"],
+      "@marshal/ipc-contract/*": ["../../packages/ipc-contract/src/*"],
+      "@marshal/shared-types": ["../../packages/shared-types/src"],
+      "@marshal/shared-types/*": ["../../packages/shared-types/src/*"],
+      "@marshal/design-tokens": ["../../packages/design-tokens/src"],
+      "@marshal/design-tokens/*": ["../../packages/design-tokens/src/*"]
+    }
+  },
+  "include": ["src", "../../packages/*/src/**/*"]
+}

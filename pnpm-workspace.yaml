@@ -1,0 +1,10 @@
+packages:
+  - 'apps/*'
+  - 'packages/*'
+  - 'e2e'
+
+allowBuilds:
+  electron: true
+  esbuild: true
+  node-pty: true
+  electron-winstaller: true
