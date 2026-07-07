@@ -349,14 +349,10 @@ export function FilesArea(): ReactElement {
 
   const crumbs = useMemo(() => buildCrumbs(currentPath), [currentPath]);
 
-  // 收起/展开侧边栏：收起时把文件区当前宽度钉死，终端区吃下空出的宽度
+  // 收起/展开侧边栏：文件区宽度始终按 --files-w(useResizable 已 clamp)定宽，
+  // 收起后终端区(1fr)吃下侧栏空出的宽度，无需在此记录/传宽。
   const toggleSidebar = (): void => {
-    if (!sidebarCollapsed) {
-      const w = areaRef.current?.getBoundingClientRect().width ?? 360;
-      setSidebar(true, Math.round(w));
-    } else {
-      setSidebar(false);
-    }
+    setSidebar(!sidebarCollapsed);
   };
 
   return (

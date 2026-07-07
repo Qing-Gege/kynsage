@@ -16,7 +16,7 @@ export function App(): ReactElement {
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [ready, setReady] = useState(false);
   const { theme, applyTheme } = useThemeStore();
-  const { sidebarCollapsed, collapsedFilesW } = useLayoutStore();
+  const { sidebarCollapsed } = useLayoutStore();
 
   useEffect(() => {
     applyTheme(theme);
@@ -35,13 +35,6 @@ export function App(): ReactElement {
     const id = requestAnimationFrame(() => setReady(true));
     return () => cancelAnimationFrame(id);
   }, []);
-
-  // 刷新后若仍是收起态，恢复文件列宽，避免 --files-w 未设导致文件区为 0
-  useEffect(() => {
-    if (sidebarCollapsed && collapsedFilesW) {
-      document.documentElement.style.setProperty('--files-w', `${collapsedFilesW}px`);
-    }
-  }, [sidebarCollapsed, collapsedFilesW]);
 
   const sidebar = useResizable({
     cssVar: '--sidebar-w',

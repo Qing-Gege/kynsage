@@ -11,8 +11,11 @@ const KEY_MAP: Record<string, string> = {
   'marshal.layout.sidebarCollapsed': 'kynsage.layout.sidebarCollapsed',
   'marshal.layout.sidebarW': 'kynsage.layout.sidebarW',
   'marshal.layout.filesW': 'kynsage.layout.filesW',
-  'marshal.layout.collapsedFilesW': 'kynsage.layout.collapsedFilesW',
 };
+
+// 已废弃的键:collapsedFilesW 曾未 clamp 地覆盖 --files-w，旧版(文件区为弹性宽列时)
+// 记录的大值会让文件区一直很宽。彻底清除新旧两处残留,让文件区只由 filesW 决定。
+const DEAD_KEYS = ['kynsage.layout.collapsedFilesW', 'marshal.layout.collapsedFilesW'];
 
 try {
   for (const [oldKey, newKey] of Object.entries(KEY_MAP)) {
@@ -22,6 +25,7 @@ try {
     }
     if (oldVal !== null) localStorage.removeItem(oldKey);
   }
+  for (const key of DEAD_KEYS) localStorage.removeItem(key);
 } catch {
   /* localStorage 不可用时静默:store 各自有默认兜底 */
 }
