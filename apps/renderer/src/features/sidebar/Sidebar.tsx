@@ -4,6 +4,7 @@ import { useNavStore } from '../../stores/nav';
 import { useThemeStore } from '../../stores/theme';
 import { useSettingsStore } from '../../stores/settings';
 import type { ThemeName } from '@marshal/design-tokens';
+import { THEMES as THEME_TOKENS, THEME_META } from '@marshal/design-tokens';
 import { FileContextMenu } from '../files/FileContextMenu';
 import type { MenuItem } from '../files/FileContextMenu';
 import { trpc } from '../../trpc';
@@ -22,20 +23,8 @@ const PIN_MIME = 'text/x-marshal-path';
 const dirNameOf = (p: string): string => p.replace(/[/\\]+$/, '').split(/[/\\]/).pop() || p;
 
 // 三档主题 —— 同一哲学的三种光照（顺序与设置面板一致：亮 / 护眼 / 暗）
-const THEMES: { val: ThemeName; title: string; icon: ReactElement }[] = [
-  {
-    val: 'light', title: '亮',
-    icon: <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round"><circle cx="12" cy="12" r="4" /><path d="M12 2v3m0 14v3M2 12h3m14 0h3M5 5l2 2m10 10 2 2M5 19l2-2m10-10 2-2" /></svg>,
-  },
-  {
-    val: 'sepia', title: '护眼',
-    icon: <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8"><circle cx="12" cy="12" r="5" /><path d="M12 12a5 5 0 0 1 0-10 5 5 0 0 0 0 10z" fill="currentColor" /></svg>,
-  },
-  {
-    val: 'dark', title: '暗',
-    icon: <svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 3a9 9 0 1 0 9 9 7 7 0 0 1-9-9z" /></svg>,
-  },
-];
+// 侧栏快捷三套(纯白/中性灰/炭灰深),用主题真实底+强调色画迷你色片;更多主题在设置里。
+const QUICK_THEMES = THEME_META.filter((m) => m.quick);
 
 const IconHome = (): ReactElement => (
   <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round">
@@ -382,16 +371,23 @@ export function Sidebar({ onSettings }: Props): ReactElement {
       </nav>
 
       <div className="sidebar-foot">
-        <div className="seg" role="group" aria-label="主题">
-          {THEMES.map((t) => (
-            <button
-              key={t.val}
-              className={theme === t.val ? 'on' : ''}
-              onClick={() => pickTheme(t.val)}
-              title={t.title}
-              type="button"
-            >{t.icon}</button>
-          ))}
+        <div className="seg seg--theme" role="group" aria-label="主题">
+          {QUICK_THEMES.map((m) => {
+            const tk = THEME_TOKENS[m.name];
+            return (
+              <button
+                key={m.name}
+                className={theme === m.name ? 'on' : ''}
+                onClick={() => pickTheme(m.name)}
+                title={m.label}
+                type="button"
+              >
+                <span className="theme-chip" style={{ background: tk['--bg-panel'], borderColor: tk['--line-strong'] }}>
+                  <span className="theme-chip-acc" style={{ background: tk['--accent'] }} />
+                </span>
+              </button>
+            );
+          })}
         </div>
         <button className="nav-item settings-item" onClick={onSettings} title="设置" type="button">
           <span className="nav-icon">

@@ -4,6 +4,7 @@ import { useSettingsStore } from '../../stores/settings';
 import { useThemeStore } from '../../stores/theme';
 import { playConfirmChime } from '../terminal/chime';
 import type { ThemeName } from '@marshal/design-tokens';
+import { THEMES, THEME_META } from '@marshal/design-tokens';
 import './SettingsPanel.css';
 
 interface Props { onClose: () => void; }
@@ -103,17 +104,18 @@ function Appearance(): ReactElement {
   return (
     <div className="st-group">
       <GroupLabel>主题</GroupLabel>
-      <Row label="明暗外观" hint="挑一个你看着舒服的，护眼色更柔和">
-        <div className="st-seg st-seg--icon">
-          <SegIcon on={theme === 'light'} title="亮" onClick={() => pickTheme('light')}>
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round"><circle cx="12" cy="12" r="4" /><path d="M12 2v3m0 14v3M2 12h3m14 0h3M5 5l2 2m10 10 2 2M5 19l2-2m10-10 2-2" /></svg>
-          </SegIcon>
-          <SegIcon on={theme === 'sepia'} title="护眼" onClick={() => pickTheme('sepia')}>
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8"><circle cx="12" cy="12" r="5" /><path d="M12 12a5 5 0 0 1 0-10 5 5 0 0 0 0 10z" fill="currentColor" /></svg>
-          </SegIcon>
-          <SegIcon on={theme === 'dark'} title="暗" onClick={() => pickTheme('dark')}>
-            <svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 3a9 9 0 1 0 9 9 7 7 0 0 1-9-9z" /></svg>
-          </SegIcon>
+      <Row label="配色外观" hint="常用三套直接点，更多主题在右侧下拉里挑">
+        <div className="st-theme">
+          <div className="st-theme-quick">
+            {THEME_META.filter((m) => m.quick).map((m) => (
+              <ThemeSwatch key={m.name} name={m.name} label={m.label} on={theme === m.name} onClick={() => pickTheme(m.name)} />
+            ))}
+          </div>
+          <select className="st-theme-more" value={theme} onChange={(e) => pickTheme(e.target.value as ThemeName)}>
+            {THEME_META.map((m) => (
+              <option key={m.name} value={m.name}>{m.label}{m.quick ? '' : ' ·'}</option>
+            ))}
+          </select>
         </div>
       </Row>
 
@@ -292,6 +294,16 @@ function Toggle({ checked, onChange }: { checked: boolean; onChange: (v: boolean
   );
 }
 
-function SegIcon({ on, title, onClick, children }: { on: boolean; title: string; onClick: () => void; children: ReactNode }): ReactElement {
-  return <button type="button" className={on ? 'on' : ''} title={title} onClick={onClick}>{children}</button>;
+// 主题色板:用该主题的真实 token 值绘制迷你预览(底/字/强调),所见即所得。
+function ThemeSwatch({ name, label, on, onClick }: { name: ThemeName; label: string; on: boolean; onClick: () => void }): ReactElement {
+  const t = THEMES[name];
+  return (
+    <button type="button" className={`st-sw ${on ? 'on' : ''}`} title={label} onClick={onClick}>
+      <span className="st-sw-chip" style={{ background: t['--bg-panel'], borderColor: t['--line-strong'] }}>
+        <span className="st-sw-ink" style={{ background: t['--ink'] }} />
+        <span className="st-sw-acc" style={{ background: t['--accent'] }} />
+      </span>
+      <span className="st-sw-label">{label}</span>
+    </button>
+  );
 }

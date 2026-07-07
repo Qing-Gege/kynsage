@@ -5,6 +5,7 @@ import { useLayoutStore } from '../../stores/layout';
 import { useNavStore } from '../../stores/nav';
 import { useSettingsStore } from '../../stores/settings';
 import { useThemeStore } from '../../stores/theme';
+import { THEME_META } from '@marshal/design-tokens';
 import { useCreateAgent } from '../agents/useCreateAgent';
 import type { SessionRow } from '../agents/HistoryMenu';
 import { WorkspaceLauncher } from './WorkspaceLauncher';
@@ -120,9 +121,10 @@ export function TerminalArea(): ReactElement {
       // 注入 hook 配置（Notification/Stop/SessionStart → 本地 HTTP），不碰用户全局 settings
       let settingsArg = '';
       try {
-        // 让 claude 配色跟随 app 主题：sepia(护眼)/light → light，dark → dark
+        // 让 claude 配色跟随 app 主题：深色主题 → dark，其余浅色 → light
         const appTheme = useThemeStore.getState().theme;
-        const claudeTheme = appTheme === 'dark' ? 'dark' : 'light';
+        const isDark = THEME_META.find((m) => m.name === appTheme)?.dark ?? false;
+        const claudeTheme = isDark ? 'dark' : 'light';
         const sp = (await (trpc as any).getHookSettingsPath.query({ claudeTheme })) as string;
         if (sp) settingsArg = ` --settings "${sp}"`;
       } catch { /* 拿不到就不加，hook 不可用但终端仍能用 */ }

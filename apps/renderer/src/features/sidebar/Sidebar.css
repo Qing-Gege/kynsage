@@ -212,3 +212,22 @@
 .seg button.on { background: var(--bg-elevated); color: var(--accent); box-shadow: 0 1px 1px rgba(0,0,0,.12); }
 .seg button:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
 .seg button svg { width: 13px; height: 13px; }
+
+/* 主题快捷:迷你色片(底 + 强调点),所见即所得 */
+.seg--theme button.on { color: inherit; }
+.theme-chip {
+  position: relative;
+  width: 15px; height: 15px;
+  border-radius: 4px;
+  border: 1px solid var(--line-strong);
+  display: block;
+  transition: transform 0.12s;
+}
+.seg--theme button:hover .theme-chip { transform: scale(1.08); }
+.seg--theme button.on .theme-chip { box-shadow: 0 0 0 1.5px var(--accent); }
+.theme-chip-acc {
+  position: absolute;
+  right: 1.5px; bottom: 1.5px;
+  width: 6px; height: 6px;
+  border-radius: 50%;
+}

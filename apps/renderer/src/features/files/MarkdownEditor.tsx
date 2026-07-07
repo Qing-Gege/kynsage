@@ -5,6 +5,7 @@ import '@milkdown/crepe/theme/common/style.css';
 import './MarkdownEditor.css';
 import { useSettingsStore } from '../../stores/settings';
 import { useThemeStore } from '../../stores/theme';
+import { THEME_META } from '@marshal/design-tokens';
 
 interface MarkdownEditorProps {
   content: string;
@@ -99,7 +100,8 @@ export function MarkdownEditor({
         ]);
         if (cancelled) return;
         // mermaid 主题跟随当前 app 主题
-        const mermaidTheme = themeRef.current === 'dark' ? 'dark' : 'default';
+        const isDark = THEME_META.find((m) => m.name === themeRef.current)?.dark ?? false;
+        const mermaidTheme = isDark ? 'dark' : 'default';
         // 先 use(diagram) 注册 mermaidConfigCtx slice，再 config 写入它的值
         crepe.editor
           .use(math)

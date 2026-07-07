@@ -1,6 +1,6 @@
 import { create } from 'zustand';
-import type { ThemeName, Theme } from '@marshal/design-tokens';
-import { darkTheme, sepiaTheme, lightTheme } from '@marshal/design-tokens';
+import type { ThemeName } from '@marshal/design-tokens';
+import { THEMES } from '@marshal/design-tokens';
 
 interface ThemeStore {
   theme: ThemeName;
@@ -8,14 +8,12 @@ interface ThemeStore {
   applyTheme: (theme: ThemeName) => void;
 }
 
-const themes: Record<ThemeName, Theme> = {
-  dark: darkTheme,
-  sepia: sepiaTheme,
-  light: lightTheme,
-};
+// 旧主题名 → 新主题名迁移(light/sepia/dark 已废弃)。
+const LEGACY: Record<string, ThemeName> = { light: 'white', sepia: 'paper', dark: 'ink' };
 
-const stored = localStorage.getItem('marshal.theme') as ThemeName | null;
-const saved: ThemeName = stored && stored in themes ? stored : 'light';
+const stored = localStorage.getItem('marshal.theme');
+const migrated = stored && LEGACY[stored] ? LEGACY[stored] : stored;
+const saved: ThemeName = migrated && migrated in THEMES ? (migrated as ThemeName) : 'white';
 
 export const useThemeStore = create<ThemeStore>((set) => ({
   theme: saved,
@@ -24,7 +22,7 @@ export const useThemeStore = create<ThemeStore>((set) => ({
     localStorage.setItem('marshal.theme', theme);
   },
   applyTheme: (theme) => {
-    const tokens = themes[theme];
+    const tokens = THEMES[theme];
     if (tokens) {
       Object.entries(tokens).forEach(([key, value]) => {
         document.documentElement.style.setProperty(key, value);

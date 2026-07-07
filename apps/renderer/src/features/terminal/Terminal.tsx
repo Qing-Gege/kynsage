@@ -51,21 +51,23 @@ function buildXtermTheme(): ITheme {
   const blue = v('--term-blue', '#6F94B8');
   const magenta = v('--term-magenta', '#B07FA0');
 
-  // ANSI 16-color palette must match the terminal background, or e.g. brightWhite
-  // becomes invisible on a light terminal. Pick by background luminance.
+  // 共享 ANSI 主色(全主题一致):红/绿/黄/紫;黑随底色明暗切换 #0B1115 / #4C5961。
+  // white/brightWhite 必须与终端底对比,否则浅底上不可见 —— 按背景明度分支。
+  const red = '#B42318';
+  const cyan = '#2E6E66';
   const lightBg = luminance(bg) > 140;
   const ansi = lightBg
     ? {
-        black: '#3A3527', red: '#B23C2E', cyan: '#2E6E66', white: '#3A3527',
-        brightBlack: dim, brightRed: '#C2543E', brightGreen: '#4E7A40',
-        brightYellow: '#9A7220', brightBlue: '#3F6377', brightMagenta: '#8E6580',
-        brightCyan: '#3A7E74', brightWhite: '#000000',
+        black: '#0B1115', red, cyan, white: '#4C5961',
+        brightBlack: dim, brightRed: '#C2543E', brightGreen: green,
+        brightYellow: amber, brightBlue: blue, brightMagenta: magenta,
+        brightCyan: '#3A7E74', brightWhite: '#0B1115',
       }
     : {
-        black: '#000000', red: '#D98C72', cyan: '#7FB0A8', white: text,
-        brightBlack: dim, brightRed: '#E2A488', brightGreen: '#86C078',
-        brightYellow: '#E0B566', brightBlue: '#88AACF', brightMagenta: '#C497B6',
-        brightCyan: '#97C7BE', brightWhite: '#F4EFE2',
+        black: '#4C5961', red, cyan, white: text,
+        brightBlack: dim, brightRed: '#D98C72', brightGreen: green,
+        brightYellow: amber, brightBlue: blue, brightMagenta: magenta,
+        brightCyan: '#7FB0A8', brightWhite: '#FFFFFF',
       };
 
   return {
