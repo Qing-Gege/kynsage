@@ -36,31 +36,6 @@
 
 <br>
 
-<div align="center">
-
-### 🎉 感谢 AI Pro API 赞助本项目
-
-</div>
-
-<table>
-<tr>
-<td width="300" align="center" valign="middle">
-<a href="https://aiproapi.com/register?aff=pm1a"><img src="docs/images/logo-h.png" alt="AI Pro API · 企业级 AI 中转站 aiproapi.com" width="280" /></a>
-</td>
-<td valign="middle">
-
-**[AI Pro API（APIKEY.FUN）](https://aiproapi.com/register?aff=pm1a)** 是一家专业的企业级 AI 中转站，致力于为企业和个人用户提供稳定、高效、低成本的 AI 模型 API 接入服务。
-
-- 💧 **承诺绝不掺水**，一经发现赔付 **10 万**
-- 🧾 支持国内及海外主体**公对公结算、开票**
-- 🤖 覆盖 **Claude、OpenAI、Gemini** 等顶尖模型，价格低至官方原价的 **7%**
-- 🎁 通过[**本项目专属链接**](https://aiproapi.com/register?aff=pm1a)注册，享 **充值永久 95 折** 专属优惠
-
-</td>
-</tr>
-</table>
-
-<br>
 
 ## 它解决什么问题
 
