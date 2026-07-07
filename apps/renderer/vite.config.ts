@@ -23,10 +23,10 @@ export default defineConfig({
   resolve: {
     alias: {
       '@': path.resolve(__dirname, 'src'),
-      '@marshal/core': path.resolve(__dirname, '../../packages/core/src'),
-      '@marshal/ipc-contract': path.resolve(__dirname, '../../packages/ipc-contract/src'),
-      '@marshal/shared-types': path.resolve(__dirname, '../../packages/shared-types/src'),
-      '@marshal/design-tokens': path.resolve(__dirname, '../../packages/design-tokens/src'),
+      '@kynsage/core': path.resolve(__dirname, '../../packages/core/src'),
+      '@kynsage/ipc-contract': path.resolve(__dirname, '../../packages/ipc-contract/src'),
+      '@kynsage/shared-types': path.resolve(__dirname, '../../packages/shared-types/src'),
+      '@kynsage/design-tokens': path.resolve(__dirname, '../../packages/design-tokens/src'),
     },
   },
   server: {

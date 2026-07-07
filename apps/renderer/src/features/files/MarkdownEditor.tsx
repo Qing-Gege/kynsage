@@ -5,7 +5,7 @@ import '@milkdown/crepe/theme/common/style.css';
 import './MarkdownEditor.css';
 import { useSettingsStore } from '../../stores/settings';
 import { useThemeStore } from '../../stores/theme';
-import { THEME_META } from '@marshal/design-tokens';
+import { THEME_META } from '@kynsage/design-tokens';
 
 interface MarkdownEditorProps {
   content: string;

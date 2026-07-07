@@ -6,7 +6,7 @@ import { Terminal as XTerm } from '@xterm/xterm';
 import type { ITheme } from '@xterm/xterm';
 import { FitAddon } from '@xterm/addon-fit';
 import { Unicode11Addon } from '@xterm/addon-unicode11';
-import { CwdTracker } from '@marshal/core';
+import { CwdTracker } from '@kynsage/core';
 import { trpc } from '../../trpc';
 import '@xterm/xterm/css/xterm.css';
 

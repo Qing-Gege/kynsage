@@ -1,6 +1,6 @@
 ***
 
-name: 狗头军师 / Marshal
+name: 狗头军师 / Kynsage
 description: 一个狗军师，三个诸葛亮 — Windows 多 Agent 指挥驾驶舱
 colors:
 accent: "#C2410C"
@@ -35,13 +35,13 @@ md: "12px"
 lg: "16px"
 ----------
 
-# Design System: 狗头军师 / Marshal
+# Design System: 狗头军师 / Kynsage
 
 ## 1. Overview
 
 **Creative North Star: "The Craftsman's Bench"**
 
-狗头军师/Marshal 的设计语言源于工匠工作台的克制美学：每个工具都有明确位置，每个表面都经过打磨，没有装饰性的元素，只有功能性的精确。这是为律师、专利代理师、作家等专业人士设计的多 agent 指挥工具，用户需要在高信息密度下保持清晰的认知地图，不被视觉噪音干扰。
+狗头军师/Kynsage 的设计语言源于工匠工作台的克制美学：每个工具都有明确位置，每个表面都经过打磨，没有装饰性的元素，只有功能性的精确。这是为律师、专利代理师、作家等专业人士设计的多 agent 指挥工具，用户需要在高信息密度下保持清晰的认知地图，不被视觉噪音干扰。
 
 设计拒绝三种方向：SaaS 仪表板的中庸平淡（Notion/Linear 的白底卡片模板感）、游戏化/赛博朋克的炫技装饰（RGB 渐变/粒子特效）、以及过度圆润的消费级产品感（20px+ 圆角/毛玻璃）。我们追求的是**工具的消失感**——界面应该成为肌肉记忆的一部分，而不是需要欣赏的对象。
 
@@ -200,7 +200,7 @@ lg: "16px"
 
 **Fixed rem scale, not fluid.** 产品 UI 不使用 clamp()，用户在固定 DPI 下工作，流式字号在侧边栏缩小会显得更糟。所有尺寸为固定 px 值。
 
-**No display fonts.** 品牌名"狗头军师 / Marshal"使用 14px 600 weight 的 Inter，配合适当 letter-spacing，足以制造辨识度。不引入 serif 或 display font，避免"自我欣赏"的品牌化。
+**No display fonts.** 品牌名"狗头军师 / Kynsage"使用 14px 600 weight 的 Inter，配合适当 letter-spacing，足以制造辨识度。不引入 serif 或 display font，避免"自我欣赏"的品牌化。
 
 ## 4. Elevation
 

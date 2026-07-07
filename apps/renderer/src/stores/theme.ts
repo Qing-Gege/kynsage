@@ -1,6 +1,6 @@
 import { create } from 'zustand';
-import type { ThemeName } from '@marshal/design-tokens';
-import { THEMES } from '@marshal/design-tokens';
+import type { ThemeName } from '@kynsage/design-tokens';
+import { THEMES } from '@kynsage/design-tokens';
 
 interface ThemeStore {
   theme: ThemeName;
@@ -11,7 +11,7 @@ interface ThemeStore {
 // 旧主题名 → 新主题名迁移(light/sepia/dark 已废弃)。
 const LEGACY: Record<string, ThemeName> = { light: 'white', sepia: 'paper', dark: 'ink' };
 
-const stored = localStorage.getItem('marshal.theme');
+const stored = localStorage.getItem('kynsage.theme');
 const migrated = stored && LEGACY[stored] ? LEGACY[stored] : stored;
 const saved: ThemeName = migrated && migrated in THEMES ? (migrated as ThemeName) : 'white';
 
@@ -19,7 +19,7 @@ export const useThemeStore = create<ThemeStore>((set) => ({
   theme: saved,
   setTheme: (theme) => {
     set({ theme });
-    localStorage.setItem('marshal.theme', theme);
+    localStorage.setItem('kynsage.theme', theme);
   },
   applyTheme: (theme) => {
     const tokens = THEMES[theme];

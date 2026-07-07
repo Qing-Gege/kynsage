@@ -3,8 +3,8 @@ import type { ReactElement } from 'react';
 import { useNavStore } from '../../stores/nav';
 import { useThemeStore } from '../../stores/theme';
 import { useSettingsStore } from '../../stores/settings';
-import type { ThemeName } from '@marshal/design-tokens';
-import { THEMES as THEME_TOKENS, THEME_META } from '@marshal/design-tokens';
+import type { ThemeName } from '@kynsage/design-tokens';
+import { THEMES as THEME_TOKENS, THEME_META } from '@kynsage/design-tokens';
 import { FileContextMenu } from '../files/FileContextMenu';
 import type { MenuItem } from '../files/FileContextMenu';
 import { trpc } from '../../trpc';
@@ -17,7 +17,7 @@ interface RecentDir { name: string; path: string; mtime: number; }
 interface Props { onSettings: () => void; }
 
 // 内部拖拽用的自定义 mime —— 与系统文件拖入（dataTransfer.files）天然分流，互不串台。
-const PIN_MIME = 'text/x-marshal-path';
+const PIN_MIME = 'text/x-kynsage-path';
 
 // 从完整路径取末段目录名（与文件区面包屑 ☆ 同一算法）
 const dirNameOf = (p: string): string => p.replace(/[/\\]+$/, '').split(/[/\\]/).pop() || p;

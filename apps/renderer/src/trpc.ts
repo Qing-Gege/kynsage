@@ -1,4 +1,4 @@
-import type { AppRouter } from '@marshal/ipc-contract';
+import type { AppRouter } from '@kynsage/ipc-contract';
 
 declare global {
   interface Window {

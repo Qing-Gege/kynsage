@@ -15,17 +15,17 @@ interface LayoutStore {
   setLauncherOpen: (open: boolean) => void;
 }
 
-const savedMode = (localStorage.getItem('marshal.layout.mode') as LayoutMode | null) ?? 'tabs';
-const savedCollapsed = localStorage.getItem('marshal.layout.sidebarCollapsed') === '1';
+const savedMode = (localStorage.getItem('kynsage.layout.mode') as LayoutMode | null) ?? 'tabs';
+const savedCollapsed = localStorage.getItem('kynsage.layout.sidebarCollapsed') === '1';
 const savedFilesW = (() => {
-  const s = localStorage.getItem('marshal.layout.collapsedFilesW');
+  const s = localStorage.getItem('kynsage.layout.collapsedFilesW');
   return s ? Number(s) : null;
 })();
 
 export const useLayoutStore = create<LayoutStore>((set) => ({
   mode: savedMode,
   setMode: (mode) => {
-    localStorage.setItem('marshal.layout.mode', mode);
+    localStorage.setItem('kynsage.layout.mode', mode);
     set({ mode });
   },
   launcherOpen: false,
@@ -33,9 +33,9 @@ export const useLayoutStore = create<LayoutStore>((set) => ({
   sidebarCollapsed: savedCollapsed,
   collapsedFilesW: savedFilesW,
   setSidebar: (collapsed, filesW) => {
-    localStorage.setItem('marshal.layout.sidebarCollapsed', collapsed ? '1' : '0');
+    localStorage.setItem('kynsage.layout.sidebarCollapsed', collapsed ? '1' : '0');
     if (collapsed && typeof filesW === 'number') {
-      localStorage.setItem('marshal.layout.collapsedFilesW', String(filesW));
+      localStorage.setItem('kynsage.layout.collapsedFilesW', String(filesW));
       document.documentElement.style.setProperty('--files-w', `${filesW}px`);
       set({ sidebarCollapsed: true, collapsedFilesW: filesW });
     } else {

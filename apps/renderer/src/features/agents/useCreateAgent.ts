@@ -2,7 +2,7 @@ import { useCallback } from 'react';
 import { useAgentsStore } from '../../stores/agents';
 import { useSettingsStore } from '../../stores/settings';
 import { useNavStore } from '../../stores/nav';
-import { AgentSessionStateMachine } from '@marshal/core';
+import { AgentSessionStateMachine } from '@kynsage/core';
 import { trpc } from '../../trpc';
 
 const machine = new AgentSessionStateMachine();

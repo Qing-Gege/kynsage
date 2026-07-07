@@ -3,8 +3,8 @@ import * as esbuild from 'esbuild';
 // Bundle the Electron main process into a single self-contained file.
 //
 // Why bundle: the main process is ESM and imports workspace packages by bare
-// specifier (`@marshal/ipc-contract`). Inside a packaged app.asar there is no
-// `node_modules/@marshal/*` for Node's ESM resolver to find, so the unbundled
+// specifier (`@kynsage/ipc-contract`). Inside a packaged app.asar there is no
+// `node_modules/@kynsage/*` for Node's ESM resolver to find, so the unbundled
 // build crashes with ERR_MODULE_NOT_FOUND at startup. Inlining every pure-JS
 // dependency removes the resolution problem entirely.
 //

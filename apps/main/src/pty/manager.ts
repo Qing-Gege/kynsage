@@ -55,7 +55,7 @@ export class PtyManager extends EventEmitter {
     const env: Record<string, string> = {
       ...(process.env as Record<string, string>),
       TERM: 'xterm-256color',
-      MARSHAL: '1',
+      KYNSAGE: '1',
     };
     if (!/UTF-8/i.test(env.LC_ALL || env.LC_CTYPE || env.LANG || '')) {
       env.LANG = process.platform === 'darwin' ? 'zh_CN.UTF-8' : 'C.UTF-8';

@@ -2,7 +2,7 @@
 
 ## Register
 
-狗头军师 / Marshal — 一个狗军师，三个诸葛亮
+狗头军师 / Kynsage — 一个狗军师，三个诸葛亮
 
 ## Users
 
@@ -28,7 +28,7 @@
 
 ## Product Purpose
 
-狗头军师/Marshal 是一个 **Windows 多 agent 指挥驾驶舱**（支持 macOS/Linux，但以 Windows 用户为主），让非技术用户能够在单个窗口内同时管理、监控多个 Claude Code agent 的并行工作。
+狗头军师/Kynsage 是一个 **Windows 多 agent 指挥驾驶舱**（支持 macOS/Linux，但以 Windows 用户为主），让非技术用户能够在单个窗口内同时管理、监控多个 Claude Code agent 的并行工作。
 
 产品解决的核心问题：
 

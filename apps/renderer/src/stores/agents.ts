@@ -1,5 +1,5 @@
 import { create } from 'zustand';
-import type { AgentSession } from '@marshal/core';
+import type { AgentSession } from '@kynsage/core';
 
 interface AgentsStore {
   sessions: AgentSession[];

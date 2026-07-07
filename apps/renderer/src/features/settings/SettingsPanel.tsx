@@ -3,8 +3,8 @@ import type { ReactElement, ReactNode } from 'react';
 import { useSettingsStore } from '../../stores/settings';
 import { useThemeStore } from '../../stores/theme';
 import { playConfirmChime } from '../terminal/chime';
-import type { ThemeName } from '@marshal/design-tokens';
-import { THEMES, THEME_META } from '@marshal/design-tokens';
+import type { ThemeName } from '@kynsage/design-tokens';
+import { THEMES, THEME_META } from '@kynsage/design-tokens';
 import './SettingsPanel.css';
 
 interface Props { onClose: () => void; }

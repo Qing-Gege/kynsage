@@ -11,14 +11,14 @@
     "noEmit": true,
     "baseUrl": ".",
     "paths": {
-      "@marshal/core": ["../../packages/core/src"],
-      "@marshal/core/*": ["../../packages/core/src/*"],
-      "@marshal/ipc-contract": ["../../packages/ipc-contract/src"],
-      "@marshal/ipc-contract/*": ["../../packages/ipc-contract/src/*"],
-      "@marshal/shared-types": ["../../packages/shared-types/src"],
-      "@marshal/shared-types/*": ["../../packages/shared-types/src/*"],
-      "@marshal/design-tokens": ["../../packages/design-tokens/src"],
-      "@marshal/design-tokens/*": ["../../packages/design-tokens/src/*"]
+      "@kynsage/core": ["../../packages/core/src"],
+      "@kynsage/core/*": ["../../packages/core/src/*"],
+      "@kynsage/ipc-contract": ["../../packages/ipc-contract/src"],
+      "@kynsage/ipc-contract/*": ["../../packages/ipc-contract/src/*"],
+      "@kynsage/shared-types": ["../../packages/shared-types/src"],
+      "@kynsage/shared-types/*": ["../../packages/shared-types/src/*"],
+      "@kynsage/design-tokens": ["../../packages/design-tokens/src"],
+      "@kynsage/design-tokens/*": ["../../packages/design-tokens/src/*"]
     }
   },
   "include": ["src", "../../packages/*/src/**/*"]

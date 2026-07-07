@@ -5,7 +5,7 @@ import { useLayoutStore } from '../../stores/layout';
 import { useNavStore } from '../../stores/nav';
 import { useSettingsStore } from '../../stores/settings';
 import { useThemeStore } from '../../stores/theme';
-import { THEME_META } from '@marshal/design-tokens';
+import { THEME_META } from '@kynsage/design-tokens';
 import { useCreateAgent } from '../agents/useCreateAgent';
 import type { SessionRow } from '../agents/HistoryMenu';
 import { WorkspaceLauncher } from './WorkspaceLauncher';

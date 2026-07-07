@@ -3,7 +3,7 @@ import path from 'node:path';
 import * as fsp from 'node:fs/promises';
 import * as fs from 'node:fs';
 import { fileURLToPath } from 'node:url';
-import { appRouter, peekSession } from '@marshal/ipc-contract';
+import { appRouter, peekSession } from '@kynsage/ipc-contract';
 import { PtyManager } from './pty/index.js';
 import { startHookServer } from './hooks/server.js';
 import type { HookEvent } from './hooks/server.js';

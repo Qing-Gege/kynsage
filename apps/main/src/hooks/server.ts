@@ -64,7 +64,7 @@ export function startHookServer(onEvent: (evt: HookEvent) => void): HookServer {
   });
 
   // 写到 app 专属临时目录，不污染用户 ~/.claude/settings.json
-  const dir = path.join(os.tmpdir(), 'marshal-hooks');
+  const dir = path.join(os.tmpdir(), 'kynsage-hooks');
   fs.mkdirSync(dir, { recursive: true });
   const settingsPath = path.join(dir, 'hooks.settings.json');
 

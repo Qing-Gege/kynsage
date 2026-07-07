@@ -71,7 +71,7 @@ const LEGACY_DEFAULTS = {
 
 function load(): Prefs {
   try {
-    const raw = localStorage.getItem('marshal.settings');
+    const raw = localStorage.getItem('kynsage.settings');
     const stored = raw ? JSON.parse(raw) : {};
     const merged: Prefs & { __v?: number } = { ...DEFAULTS, ...stored };
     if ((stored.__v ?? 0) < SETTINGS_VERSION) {
@@ -79,7 +79,7 @@ function load(): Prefs {
       if (merged.fontFamily === LEGACY_DEFAULTS.fontFamily) merged.fontFamily = DEFAULTS.fontFamily;
       if (LEGACY_DEFAULTS.fontSizes.includes(merged.fontSize)) merged.fontSize = DEFAULTS.fontSize;
       const { __v, ...data } = merged;
-      localStorage.setItem('marshal.settings', JSON.stringify({ ...data, __v: SETTINGS_VERSION }));
+      localStorage.setItem('kynsage.settings', JSON.stringify({ ...data, __v: SETTINGS_VERSION }));
     }
     const { __v, ...clean } = merged;
     return clean;
@@ -88,7 +88,7 @@ function load(): Prefs {
 
 function save(state: Prefs): void {
   const { patchTerminal, patchGeneral, patchCollab, ...data } = state as any;
-  localStorage.setItem('marshal.settings', JSON.stringify({ ...data, __v: SETTINGS_VERSION }));
+  localStorage.setItem('kynsage.settings', JSON.stringify({ ...data, __v: SETTINGS_VERSION }));
 }
 
 export const useSettingsStore = create<SettingsStore>((set) => ({

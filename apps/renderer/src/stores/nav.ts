@@ -12,7 +12,7 @@ interface NavStore {
   reorderFavorites: (fromIndex: number, toIndex: number) => void;
 }
 
-const KEY = 'marshal.favorites';
+const KEY = 'kynsage.favorites';
 
 // 所有 mutator 统一走这里，保证 localStorage 与内存一致。
 const persist = (favs: Favorite[]): Favorite[] => {

@@ -1,5 +1,5 @@
 {
-  "name": "@marshal/renderer",
+  "name": "@kynsage/renderer",
   "version": "0.0.0",
   "private": true,
   "type": "module",
@@ -12,9 +12,9 @@
   "dependencies": {
     "@fontsource/inter": "^5.2.8",
     "@fontsource/jetbrains-mono": "^5.2.8",
-    "@marshal/design-tokens": "workspace:*",
-    "@marshal/ipc-contract": "workspace:*",
-    "@marshal/shared-types": "workspace:*",
+    "@kynsage/design-tokens": "workspace:*",
+    "@kynsage/ipc-contract": "workspace:*",
+    "@kynsage/shared-types": "workspace:*",
     "@milkdown/crepe": "^7.21.2",
     "@milkdown/plugin-diagram": "^7.7.0",
     "@milkdown/plugin-math": "^7.5.9",

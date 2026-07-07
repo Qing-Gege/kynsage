@@ -1,6 +1,6 @@
 # 变更日志
 
-> 本文档记录狗头军师/Marshal 的主要功能迭代和设计改动。
+> 本文档记录狗头军师/Kynsage 的主要功能迭代和设计改动。
 
 ---
 
@@ -229,7 +229,7 @@ CSS 默认 `--agent-w: 920px` 与 JS 初值 `innerWidth × 2/3` 不一致，且 
 
 **存储结构**
 - `stores/settings.ts` 拆分为 `TerminalPrefs` + `GeneralPrefs`
-- 持久化到 `localStorage['marshal.settings']`
+- 持久化到 `localStorage['kynsage.settings']`
 - `Terminal.tsx` 接通所有终端配置项
 
 ### 侧边栏优化

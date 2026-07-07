@@ -1,6 +1,6 @@
 # 技术架构文档
 
-> 狗头军师/Marshal 的技术架构说明 — 2026-06-22
+> 狗头军师/Kynsage 的技术架构说明 — 2026-06-22
 
 ---
 
@@ -22,7 +22,7 @@
 ## Monorepo 结构
 
 ```
-marshal/
+kynsage/
 ├── apps/
 │   ├── main/              # Electron 主进程
 │   │   ├── src/
@@ -243,7 +243,7 @@ SettingsPanel.tsx 调用 setTheme(newTheme)
   ↓
 theme store 更新 theme 值
   ↓
-localStorage.setItem('marshal.theme', newTheme)
+localStorage.setItem('kynsage.theme', newTheme)
   ↓
 App.tsx useEffect 监听 theme 变化
   ↓
@@ -289,7 +289,7 @@ send('claude-title', sessionId, title) → 渲染端更新 tab 名与 term-bar
 
 **为何用 hook 而非正则**：终端输出五花八门，正则匹配"是否在等确认"误报频发。Claude Code 的 Notification/Stop hook 是权威信号。渲染端的输出忙/闲启发式（`Terminal.tsx`）仅作 hook 不可用时的兜底。
 
-**`--settings <file>` 不污染全局**：hook 配置写到 app 专属临时目录（`os.tmpdir()/marshal-hooks/hooks.settings.json`），经 `--settings` 指向，不碰用户的 `~/.claude/settings.json`。
+**`--settings <file>` 不污染全局**：hook 配置写到 app 专属临时目录（`os.tmpdir()/kynsage-hooks/hooks.settings.json`），经 `--settings` 指向，不碰用户的 `~/.claude/settings.json`。
 
 **`--session-id` 预知 id**：新建会话用 `crypto.randomUUID()` 生成并经 `--session-id` 强制指定。claude 采纳该 id 作为 hook payload 的 `session_id` 与 transcript 文件名（`<uuid>.jsonl`），无需事后抓取，hook 事件按 id 精确对应 tab。`--resume <id>` 与 `--session-id` 互斥，恢复用前者。
 
@@ -322,9 +322,9 @@ pnpm dev
 ```
 
 **执行流程：**
-1. `pnpm --filter @marshal/renderer dev`：启动 Vite dev server（端口 5173）
+1. `pnpm --filter @kynsage/renderer dev`：启动 Vite dev server（端口 5173）
 2. `wait-on http://localhost:5173`：等待 Vite 就绪
-3. `pnpm --filter @marshal/main dev`：
+3. `pnpm --filter @kynsage/main dev`：
    - 执行 `build.mjs --watch`（esbuild watch 模式）
    - 启动 `electron .`
 
@@ -517,7 +517,7 @@ if (path.includes('..')) {
 **问题：**应用重启后所有 agent 会话丢失。
 
 **方案：**
-- 序列化 sessions 到 `localStorage['marshal.sessions']`
+- 序列化 sessions 到 `localStorage['kynsage.sessions']`
 - 启动时恢复会话（不恢复 PTY，只恢复元数据）
 - 用户点击 tab 时重新 spawn PTY
 

@@ -8,7 +8,7 @@
   position: relative; /* 锚定 launcher 覆盖层 */
 }
 
-/* 「待确认」边缘呼吸 —— 借 fanbox termAwait，用 marshal accent + sig-pulse 同节奏。
+/* 「待确认」边缘呼吸 —— 借 fanbox termAwait，用 kynsage accent + sig-pulse 同节奏。
    agent 等用户确认时，终端区边缘内辉光轻呼吸，主动叫回注意力（PRODUCT.md 强提示）。
    ::after 不挡点击、不改布局；z-index 低于 launcher 覆盖层(20)。 */
 .terminal-area-container.is-awaiting::after {

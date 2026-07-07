@@ -51,10 +51,10 @@ importers:
 
   apps/main:
     dependencies:
-      '@marshal/ipc-contract':
+      '@kynsage/ipc-contract':
         specifier: workspace:*
         version: link:../../packages/ipc-contract
-      '@marshal/shared-types':
+      '@kynsage/shared-types':
         specifier: workspace:*
         version: link:../../packages/shared-types
       '@trpc/server':
@@ -97,13 +97,13 @@ importers:
       '@fontsource/jetbrains-mono':
         specifier: ^5.2.8
         version: 5.2.8
-      '@marshal/design-tokens':
+      '@kynsage/design-tokens':
         specifier: workspace:*
         version: link:../../packages/design-tokens
-      '@marshal/ipc-contract':
+      '@kynsage/ipc-contract':
         specifier: workspace:*
         version: link:../../packages/ipc-contract
-      '@marshal/shared-types':
+      '@kynsage/shared-types':
         specifier: workspace:*
         version: link:../../packages/shared-types
       '@milkdown/crepe':
@@ -182,7 +182,7 @@ importers:
 
   packages/ipc-contract:
     dependencies:
-      '@marshal/shared-types':
+      '@kynsage/shared-types':
         specifier: workspace:*
         version: link:../shared-types
       '@trpc/server':

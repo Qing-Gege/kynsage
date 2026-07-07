@@ -45,7 +45,7 @@ export function App(): ReactElement {
 
   const sidebar = useResizable({
     cssVar: '--sidebar-w',
-    storageKey: 'marshal.layout.sidebarW',
+    storageKey: 'kynsage.layout.sidebarW',
     edge: 'left',
     min: 180,
     max: 360,
@@ -54,7 +54,7 @@ export function App(): ReactElement {
 
   const files = useResizable({
     cssVar: '--files-w',
-    storageKey: 'marshal.layout.filesW',
+    storageKey: 'kynsage.layout.filesW',
     edge: 'left',
     min: 180,
     max: 520,

@@ -1,6 +1,7 @@
 from PIL import Image, ImageOps, ImageFilter
 import os
-os.chdir("/Users/quincy/dev/marshal/docs/images")
+# 相对脚本自身定位仓库根下的 docs/images，避免硬编码绝对路径
+os.chdir(os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "docs", "images"))
 BORDER=(212,211,201,255); SHADOW=(60,58,50); MARGIN=26; BLUR=14; OFFSET_Y=6; SHADOW_ALPHA=46
 jobs=[("001 副本.png","launcher.png"),("002 副本.png","hero.png"),
       ("003 副本.png","hero-dark.png"),("004 副本.png","settings.png"),

@@ -442,7 +442,7 @@ export function FilesArea(): ReactElement {
                     // 只让文件夹可拖到侧边栏「快速访问」钉住。用自定义 mime，
                     // 不带 dataTransfer.files，与系统文件拖入逻辑天然分流。
                     if (file.isDirectory) {
-                      e.dataTransfer.setData('text/x-marshal-path', file.path);
+                      e.dataTransfer.setData('text/x-kynsage-path', file.path);
                       e.dataTransfer.effectAllowed = 'copy';
                     }
                   }}

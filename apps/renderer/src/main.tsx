@@ -1,4 +1,6 @@
 import { createRoot } from 'react-dom/client';
+// 必须先于 ./App(及其 store 依赖链)执行:一次性迁移旧版本 localStorage 键名
+import './stores/migrate';
 import '@fontsource/inter/400.css';
 import '@fontsource/inter/500.css';
 import '@fontsource/inter/600.css';

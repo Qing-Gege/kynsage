@@ -1,5 +1,5 @@
 {
-  "name": "marshal",
+  "name": "kynsage",
   "version": "0.0.11",
   "type": "module",
   "private": true,
@@ -13,13 +13,13 @@
     "node-pty": "^1.1.0"
   },
   "imports": {
-    "#marshal/core": "./packages/core/dist/index.js",
-    "#marshal/ipc-contract": "./packages/ipc-contract/dist/index.js",
-    "#marshal/shared-types": "./packages/shared-types/dist/index.js",
-    "#marshal/design-tokens": "./packages/design-tokens/dist/index.js"
+    "#kynsage/core": "./packages/core/dist/index.js",
+    "#kynsage/ipc-contract": "./packages/ipc-contract/dist/index.js",
+    "#kynsage/shared-types": "./packages/shared-types/dist/index.js",
+    "#kynsage/design-tokens": "./packages/design-tokens/dist/index.js"
   },
   "scripts": {
-    "dev": "concurrently -k -n vite,main -c cyan,yellow \"pnpm --filter @marshal/renderer dev\" \"wait-on http://localhost:5173 && pnpm --filter @marshal/main dev\"",
+    "dev": "concurrently -k -n vite,main -c cyan,yellow \"pnpm --filter @kynsage/renderer dev\" \"wait-on http://localhost:5173 && pnpm --filter @kynsage/main dev\"",
     "build": "pnpm -r build",
     "build:win": "pnpm build && electron-builder --win --x64 --config electron-builder.json",
     "build:mac": "pnpm build && electron-builder --mac --config electron-builder.json",

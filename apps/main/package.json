@@ -1,5 +1,5 @@
 {
-  "name": "@marshal/main",
+  "name": "@kynsage/main",
   "version": "0.0.0",
   "private": true,
   "main": "./dist/index.js",
@@ -10,8 +10,8 @@
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
-    "@marshal/ipc-contract": "workspace:*",
-    "@marshal/shared-types": "workspace:*",
+    "@kynsage/ipc-contract": "workspace:*",
+    "@kynsage/shared-types": "workspace:*",
     "@trpc/server": "^11.18.0",
     "chokidar": "^5.0.0",
     "electron-trpc": "^0.7.1",
