@@ -182,7 +182,7 @@ function createAppRouter(): any {
     getPlatform: t.procedure.query(() => process.platform),
     // hook settings 文件路径（main 启动 hook server 时写好），供 `claude --settings` 指向
     getHookSettingsPath: t.procedure
-      .input(z.object({ claudeTheme: z.enum(['dark', 'light']).optional() }).optional())
+      .input(z.object({ claudeTheme: z.enum(['dark', 'light', 'dark-ansi', 'light-ansi', 'dark-daltonized', 'light-daltonized']).optional() }).optional())
       .query(async ({ input, ctx }) => {
         const { getHookSettingsPath } = ctx as { getHookSettingsPath?: (theme?: string) => string | Promise<string> };
         return (await getHookSettingsPath?.(input?.claudeTheme)) ?? '';

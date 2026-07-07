@@ -121,10 +121,12 @@ export function TerminalArea(): ReactElement {
       // 注入 hook 配置（Notification/Stop/SessionStart → 本地 HTTP），不碰用户全局 settings
       let settingsArg = '';
       try {
-        // 让 claude 配色跟随 app 主题：深色主题 → dark，其余浅色 → light
+        // 让 claude 配色跟随 app 主题:用 *-ansi 变体 —— Claude 改用终端 16 色 ANSI
+        // 面板上色(而非内置 truecolor),我们在 buildXtermTheme 里控制该面板,切主题时
+        // Claude 新渲染的正文即跟随。深/浅决定基础明暗,ANSI 各色由 --term-* 提供。
         const appTheme = useThemeStore.getState().theme;
         const isDark = THEME_META.find((m) => m.name === appTheme)?.dark ?? false;
-        const claudeTheme = isDark ? 'dark' : 'light';
+        const claudeTheme = isDark ? 'dark-ansi' : 'light-ansi';
         const sp = (await (trpc as any).getHookSettingsPath.query({ claudeTheme })) as string;
         if (sp) settingsArg = ` --settings "${sp}"`;
       } catch { /* 拿不到就不加，hook 不可用但终端仍能用 */ }
