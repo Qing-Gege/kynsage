@@ -1,4 +1,4 @@
-import { useEffect, useLayoutEffect, useMemo } from 'react';
+import { useEffect, useLayoutEffect } from 'react';
 import type { ReactElement } from 'react';
 import { useState } from 'react';
 import { useResizable } from './useResizable';
@@ -52,18 +52,13 @@ export function App(): ReactElement {
     initial: 220,
   });
 
-  const agentInitial = useMemo(() => {
-    const s = localStorage.getItem('marshal.layout.agentW');
-    return s ? Number(s) : Math.round(window.innerWidth * 0.7);
-  }, []);
-
-  const agent = useResizable({
-    cssVar: '--agent-w',
-    storageKey: 'marshal.layout.agentW',
-    edge: 'right',
-    min: 480,
-    max: 1600,
-    initial: agentInitial,
+  const files = useResizable({
+    cssVar: '--files-w',
+    storageKey: 'marshal.layout.filesW',
+    edge: 'left',
+    min: 180,
+    max: 520,
+    initial: 220,
   });
 
   return (
@@ -90,10 +85,10 @@ export function App(): ReactElement {
 
       <div
         className="splitter splitter-v splitter-agent"
-        onMouseDown={agent.onMouseDown}
+        onMouseDown={files.onMouseDown}
         role="separator"
         aria-orientation="vertical"
-        aria-label="调整终端区域宽度"
+        aria-label="调整文件区宽度"
       />
 
       <section className="agent-area-wrapper">

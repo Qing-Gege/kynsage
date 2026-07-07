@@ -53,9 +53,9 @@
   --radius-default: 5px;
   --radius-relaxed: 6px;
 
-  /* Layout — match useResizable initial values（--agent-w 默认 70vw，对齐 JS 的 innerWidth*0.7，
-     避免首帧用旧值渲染后再被 JS 改写、配合 grid 过渡而「滑动变宽」） */
+  /* Layout — match useResizable initial values。文件区固定 ≈ 侧栏宽，终端区(1fr)吃剩余。 */
   --sidebar-w: 220px;
+  --files-w: 220px;
   --agent-w: 70vw;
 }
 
@@ -118,20 +118,16 @@ body {
    ═══════════════════════════════════════════════════════════════════ */
 .app-shell {
   display: grid;
-  /* agent 区有效宽度：以用户拖拽存下的 --agent-w 为准，但封顶为「窗口宽 − 侧栏 − 文件区最小宽 − 两条分隔线」。
-     --agent-w 是 useResizable 存的固定 px、不随窗口缩放而变；若直接当末列宽，窗口一变窄
-     (侧栏 + 文件区最小 + --agent-w > 100vw) 末列就会溢出被 overflow:hidden 裁掉，
-     顶栏最右的窗口按钮(最小化/最大化/关闭)随之被推出屏幕。故此处用 min() 动态封顶。 */
-  --agent-w-eff: min(var(--agent-w), calc(100vw - 2 * var(--sidebar-w) - 2px));
-  /* 文件区(第3列)最小宽 = 侧栏宽：与侧栏同宽前不再被终端区挤瘪（收起态例外，见下）。 */
-  grid-template-columns: var(--sidebar-w) 1px minmax(var(--sidebar-w), 1fr) 1px var(--agent-w-eff);
+  /* 文件区(第3列)固定 --files-w ≈ 侧栏宽；终端区(末列)minmax(0,1fr)吃掉其余全部宽度。
+     终端为 1fr 天然不溢出，无需再对固定像素封顶。与收起态(.is-collapsed)同构。 */
+  grid-template-columns: var(--sidebar-w) 1px var(--files-w) 1px minmax(0, 1fr);
   grid-template-rows: 44px minmax(0, 1fr);
   height: 100vh;
   width: 100vw;
   overflow: hidden;
-  /* Markdown 面板(position:fixed)靠它对齐 agent 区左缘 —— 展开态用封顶后的有效宽，
-     故左缘 = 100vw - 有效 agent 宽。收起态见下方 override。 */
-  --agent-left: calc(100vw - var(--agent-w-eff));
+  /* Markdown 面板(position:fixed)靠它对齐 agent 区左缘 = 侧栏 + 文件区 + 两条分隔线。
+     收起态见下方 override(侧栏归 0)。 */
+  --agent-left: calc(var(--sidebar-w) + var(--files-w) + 2px);
 }
 /* 首帧不带过渡：避免初始宽度从 CSS 默认滑动到 JS 恢复值。挂载后再开过渡，拖拽手感不变。 */
 .app-shell.is-ready {
@@ -140,9 +136,9 @@ body {
 
 /* 收起侧边栏：侧栏/其分隔列归 0，文件区钉死当前宽度，终端区(1fr)吃下空出的宽度 */
 .app-shell.is-collapsed {
-  grid-template-columns: 0 0 var(--files-w, 360px) 1px minmax(0, 1fr);
+  grid-template-columns: 0 0 var(--files-w, 220px) 1px minmax(0, 1fr);
   /* 收起态 agent 列是 1fr，实际左缘 = 文件区宽 + 分隔线 1px；不能再用 --agent-w 反推。 */
-  --agent-left: calc(var(--files-w, 360px) + 1px);
+  --agent-left: calc(var(--files-w, 220px) + 1px);
 }
 
 .sidebar {
