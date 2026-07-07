@@ -1,6 +1,6 @@
 {
   "name": "marshal",
-  "version": "0.0.10",
+  "version": "0.0.11",
   "type": "module",
   "private": true,
   "description": "狗头军师 / Kynsage — AI Agent 指挥驾驶舱",
