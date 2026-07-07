@@ -301,7 +301,7 @@ function ThemeSwatch({ name, label, on, onClick }: { name: ThemeName; label: str
     <button type="button" className={`st-sw ${on ? 'on' : ''}`} title={label} onClick={onClick}>
       <span className="st-sw-chip" style={{ background: t['--bg-panel'], borderColor: t['--line-strong'] }}>
         <span className="st-sw-ink" style={{ background: t['--ink'] }} />
-        <span className="st-sw-acc" style={{ background: t['--accent'] }} />
+        <span className="st-sw-acc" style={{ background: t['--bg-selected'] }} />
       </span>
       <span className="st-sw-label">{label}</span>
     </button>

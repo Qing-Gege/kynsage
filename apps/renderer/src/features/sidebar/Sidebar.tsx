@@ -383,7 +383,7 @@ export function Sidebar({ onSettings }: Props): ReactElement {
                 type="button"
               >
                 <span className="theme-chip" style={{ background: tk['--bg-panel'], borderColor: tk['--line-strong'] }}>
-                  <span className="theme-chip-acc" style={{ background: tk['--accent'] }} />
+                  <span className="theme-chip-acc" style={{ background: tk['--bg-selected'] }} />
                 </span>
               </button>
             );

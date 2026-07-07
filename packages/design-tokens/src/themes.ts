@@ -56,34 +56,38 @@ function mix(a: string, b: string, t: number): string {
   const [r2, g2, b2] = hexToRgb(b);
   return rgbToHex(r1 + (r2 - r1) * t, g1 + (g2 - g1) * t, b1 + (b2 - b1) * t);
 }
-function lum(hex: string): number {
-  const [r, g, b] = hexToRgb(hex);
-  return 0.299 * r + 0.587 * g + 0.114 * b;
-}
 const BLACK = '#000000';
 const WHITE = '#FFFFFF';
 
-// 共享 ANSI 主色(与终端一致):红 / 绿 / 黄 / 紫
+// 品牌色:赤陶红 —— 全主题唯一的暖强调(新建按钮/logo/选中态/导航激活),不随主题变。
+// 浅色底用标准品牌红,深色底用略亮一档的暖橙红,保证在暗底上够跳。
+const BRAND_LIGHT = '#C2410C';
+const BRAND_DARK = '#D2542A';
+
+// 共享 ANSI 主色(与终端一致):红 / 绿 / 黄 / 紫;蓝独立给一个真蓝(强调已被品牌红占用)。
 const ANSI = { red: '#B42318', green: '#16834A', yellow: '#9A5B00', magenta: '#6F5AA7' };
 
 interface ThemeSpec {
   fg: string;
   bg: string;
   sel: string;
-  accent: string;
   dark: boolean;
 }
 
-// 4 核心色 → 全套 token。表面按明度分层,ink 阶梯由 fg 向 bg 插值,信号灯共用 ANSI。
+// 3 核心色(前景/背景/选区)+ dark 标志 → 全套 token。强调固定为品牌红。
+// 表面按明度分层,ink 阶梯由 fg 向 bg 插值,信号灯共用 ANSI。
 function deriveTheme(s: ThemeSpec): Theme {
-  const { fg, bg, sel, accent, dark } = s;
+  const { fg, bg, sel, dark } = s;
+  const accent = dark ? BRAND_DARK : BRAND_LIGHT;
   // 深色:侧栏/终端更暗(向黑),浮层/命令更亮(向前景);浅色:反之(向前景压出层次)。
   const deepen = (t: number): string => mix(bg, dark ? BLACK : fg, t);
   const lift = (t: number): string => mix(bg, dark ? fg : BLACK, t);
-  // 强调前景:亮强调用黑字,暗强调用白字。
-  const accentInk = lum(accent) > 150 ? '#15232D' : WHITE;
+  // 品牌红上永远白字(两档红明度都够暗)。
+  const accentInk = WHITE;
   // 信号灯:深色底整体提亮一档,浅色底直接用 ANSI。
   const sig = (c: string): string => (dark ? mix(c, WHITE, 0.28) : c);
+  // 终端蓝:浅色底用沉稳蓝,深色底提亮。
+  const termBlue = dark ? '#7BA0C8' : '#355A8E';
 
   return {
     '--bg-app': deepen(0.03),
@@ -111,7 +115,7 @@ function deriveTheme(s: ThemeSpec): Theme {
     '--term-dim': mix(fg, bg, 0.45),
     '--term-green': sig(ANSI.green),
     '--term-amber': sig(ANSI.yellow),
-    '--term-blue': dark ? mix(accent, WHITE, 0.2) : accent,
+    '--term-blue': termBlue,
     '--term-magenta': sig(ANSI.magenta),
     '--shadow': dark
       ? '0 0 0 0.5px rgba(0,0,0,.5), 0 14px 44px rgba(0,0,0,.5)'
@@ -120,16 +124,16 @@ function deriveTheme(s: ThemeSpec): Theme {
 }
 
 /* ===================== 八套主题(WizPatent 配色) ===================== */
-// 浅色 6:White(默认)/ Paper / Warm / Mint / Blue / Gray
-export const whiteTheme = deriveTheme({ fg: '#15232D', bg: '#FFFFFF', sel: '#DCEBF0', accent: '#023567', dark: false });
-export const paperTheme = deriveTheme({ fg: '#243541', bg: '#FBFAF6', sel: '#E8DFD0', accent: '#023567', dark: false });
-export const warmTheme = deriveTheme({ fg: '#2B332E', bg: '#FFF8ED', sel: '#EBD5B3', accent: '#7A5B18', dark: false });
-export const mintTheme = deriveTheme({ fg: '#18352E', bg: '#F0FBF6', sel: '#CDEADE', accent: '#16834A', dark: false });
-export const blueTheme = deriveTheme({ fg: '#1A3342', bg: '#F1F8FC', sel: '#CFE6F3', accent: '#023567', dark: false });
-export const grayTheme = deriveTheme({ fg: '#1E2E37', bg: '#F4F6F8', sel: '#D9E1E7', accent: '#526371', dark: false });
+// 浅色 6:White(默认)/ Paper / Warm / Mint / Blue / Gray —— 强调统一品牌红,只差底/字/选区照明。
+export const whiteTheme = deriveTheme({ fg: '#15232D', bg: '#FFFFFF', sel: '#DCEBF0', dark: false });
+export const paperTheme = deriveTheme({ fg: '#243541', bg: '#FBFAF6', sel: '#E8DFD0', dark: false });
+export const warmTheme = deriveTheme({ fg: '#2B332E', bg: '#FFF8ED', sel: '#EBD5B3', dark: false });
+export const mintTheme = deriveTheme({ fg: '#18352E', bg: '#F0FBF6', sel: '#CDEADE', dark: false });
+export const blueTheme = deriveTheme({ fg: '#1A3342', bg: '#F1F8FC', sel: '#CFE6F3', dark: false });
+export const grayTheme = deriveTheme({ fg: '#1E2E37', bg: '#F4F6F8', sel: '#D9E1E7', dark: false });
 // 深色 2:Deep(墨蓝底)/ Ink(炭灰底)
-export const deepTheme = deriveTheme({ fg: '#E8F3F5', bg: '#0F232B', sel: '#295061', accent: '#69D2E7', dark: true });
-export const inkTheme = deriveTheme({ fg: '#F1F5F7', bg: '#20262D', sel: '#46515C', accent: '#8AD3E0', dark: true });
+export const deepTheme = deriveTheme({ fg: '#E8F3F5', bg: '#0F232B', sel: '#295061', dark: true });
+export const inkTheme = deriveTheme({ fg: '#F1F5F7', bg: '#20262D', sel: '#46515C', dark: true });
 
 export type ThemeName = 'white' | 'paper' | 'warm' | 'mint' | 'blue' | 'gray' | 'deep' | 'ink';
 

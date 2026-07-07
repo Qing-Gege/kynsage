@@ -230,4 +230,5 @@
   right: 1.5px; bottom: 1.5px;
   width: 6px; height: 6px;
   border-radius: 50%;
+  box-shadow: 0 0 0 0.5px rgba(0,0,0,.18);
 }

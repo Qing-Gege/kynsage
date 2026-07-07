@@ -115,7 +115,7 @@
 .st-sw:hover .st-sw-chip { transform: scale(1.06); }
 .st-sw.on .st-sw-chip { box-shadow: 0 0 0 2px var(--accent); }
 .st-sw-ink { position: absolute; left: 4px; top: 5px; width: 13px; height: 3px; border-radius: 2px; }
-.st-sw-acc { position: absolute; right: 4px; bottom: 4px; width: 7px; height: 7px; border-radius: 50%; }
+.st-sw-acc { position: absolute; right: 4px; bottom: 4px; width: 7px; height: 7px; border-radius: 50%; box-shadow: 0 0 0 0.5px rgba(0,0,0,.18); }
 .st-sw-label { font-size: var(--fs-micro); color: var(--ink-3); }
 .st-sw.on .st-sw-label { color: var(--ink); }
 .st-theme-more {
