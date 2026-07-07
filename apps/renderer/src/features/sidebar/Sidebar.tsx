@@ -227,7 +227,7 @@ export function Sidebar({ onSettings }: Props): ReactElement {
   return (
     <div className="sidebar-inner">
       <div className="brand">
-        <img className="brand-mark" src={logoMark} alt={brandTitle} width={32} height={32} />
+        <img className="brand-mark" src={logoMark} alt={brandTitle} width={40} height={40} />
         <div className="brand-text">
           <span className="brand-cn">{brandTitle}</span>
           <span className="brand-sub">{brandSubtitle}</span>
