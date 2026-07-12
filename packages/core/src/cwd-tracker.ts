@@ -1,3 +1,5 @@
+import { toNativePath } from '@kynsage/shared-types';
+
 export interface CwdSource {
   type: 'initial' | 'pty-cd' | 'periodic';
   cwd: string;
@@ -81,13 +83,13 @@ export class CwdTracker {
   private resolvePath(rawPath: string): string {
     // 绝对路径：Unix /、Windows 盘符 C:\、UNC \\server、长路径 \\?\
     if (rawPath.startsWith('/') || /^[A-Za-z]:[\\/]/.test(rawPath) || rawPath.startsWith('\\\\')) {
-      return rawPath;
+      return toNativePath(rawPath);
     }
     const current = this.getCurrentCwd();
-    if (current.endsWith('/') || current.endsWith('\\')) return `${current}${rawPath}`;
+    if (current.endsWith('/') || current.endsWith('\\')) return toNativePath(`${current}${rawPath}`);
     // 用当前路径已有的分隔符风格拼接，避免 C:\foo/bar 混合
     const sep = current.includes('\\') && !current.includes('/') ? '\\' : '/';
-    return `${current}${sep}${rawPath}`;
+    return toNativePath(`${current}${sep}${rawPath}`);
   }
 
   reset(cwd: string): void {

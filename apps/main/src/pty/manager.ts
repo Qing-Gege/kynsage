@@ -3,6 +3,7 @@ import * as pty from 'node-pty';
 import { EventEmitter } from 'node:events';
 import * as os from 'node:os';
 import * as fs from 'node:fs';
+import { toNativePath } from '@kynsage/shared-types';
 
 export interface PtySession {
   id: string;
@@ -48,8 +49,10 @@ export class PtyManager extends EventEmitter {
     const shellArgs =
       args ?? (process.platform === 'win32' ? [] : ['-l']);
 
-    // 目录不存在时回落到主目录,避免 spawn 报错
-    const startCwd = cwd && fs.existsSync(cwd) ? cwd : os.homedir();
+    // 先把 cwd 归一化成原生形式（Windows 正斜杠/混合分隔符 node-pty 无法 chdir，
+    // 会静默落到默认目录 → Claude 把历史写错文件夹）。归一化后仍不存在才回落主目录。
+    const nativeCwd = cwd ? toNativePath(cwd) : '';
+    const startCwd = nativeCwd && fs.existsSync(nativeCwd) ? nativeCwd : os.homedir();
 
     // GUI 启动的 app 不继承 shell 的 locale,中文路径会被 zsh 按字节转义成乱码
     const env: Record<string, string> = {

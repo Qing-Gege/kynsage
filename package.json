@@ -24,6 +24,7 @@
     "build:win": "pnpm build && electron-builder --win --x64 --config electron-builder.json",
     "build:mac": "pnpm build && electron-builder --mac --config electron-builder.json",
     "build:linux": "pnpm build && electron-builder --linux --config electron-builder.json",
+    "gen:manifest": "node scripts/gen-update-manifest.mjs",
     "typecheck": "pnpm -r typecheck",
     "lint": "eslint .",
     "format": "prettier --write .",

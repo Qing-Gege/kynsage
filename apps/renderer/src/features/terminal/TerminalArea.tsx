@@ -99,7 +99,8 @@ export function TerminalArea(): ReactElement {
     newLabel,
     onNew: () => { closeLauncher(); void createInCurrentDir(); },
     onRestore: () => { closeLauncher(); if (currentPath) void restoreSession(currentPath); },
-    onPickHistory: (s: SessionRow) => { closeLauncher(); if (currentPath) restoreSessionById(currentPath, s.sessionId, s.title); },
+    // resume 用会话保存的 cwd（而非当前浏览目录），Windows 下才能命中原 projects 目录
+    onPickHistory: (s: SessionRow) => { closeLauncher(); const cwd = s.cwd || currentPath; if (cwd) restoreSessionById(cwd, s.sessionId, s.title); },
   };
 
   const handleTerminalReady = async (sessionId: string, cols: number, rows: number): Promise<void> => {

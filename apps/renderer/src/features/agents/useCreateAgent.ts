@@ -78,9 +78,10 @@ export function useCreateAgent(): {
   const restoreSession = useCallback(async (cwd: string) => {
     try {
       const rows = (await (trpc as any).listSessions.query({ cwd })) as
-        { sessionId: string; title: string; mtime: number }[];
+        { sessionId: string; title: string; mtime: number; cwd: string }[];
       if (rows.length > 0) {
-        createInDir(cwd, { resumeSessionId: rows[0]!.sessionId, name: rows[0]!.title });
+        // 用会话保存的原始 cwd 启动，Claude 才能重编码命中原 projects 目录（Windows 关键）
+        createInDir(rows[0]!.cwd || cwd, { resumeSessionId: rows[0]!.sessionId, name: rows[0]!.title });
         return;
       }
     } catch { /* 落到 --continue */ }

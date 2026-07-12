@@ -2,6 +2,7 @@ import { initTRPC } from '@trpc/server';
 import { observable } from '@trpc/server/observable';
 import { z } from 'zod';
 import type { EventEmitter } from 'node:events';
+import { toNativePath, winPathKey } from '@kynsage/shared-types';
 
 const t = initTRPC.create({ isServer: true });
 
@@ -176,10 +177,52 @@ async function uniqueDest(
   }
 }
 
+// 语义化版本比较：a>b→1, a<b→-1, 相等→0（缺省段按 0）。
+function cmpVer(a: string, b: string): number {
+  const pa = a.split('.').map((n) => parseInt(n, 10) || 0);
+  const pb = b.split('.').map((n) => parseInt(n, 10) || 0);
+  for (let i = 0; i < Math.max(pa.length, pb.length); i++) {
+    const d = (pa[i] ?? 0) - (pb[i] ?? 0);
+    if (d !== 0) return d > 0 ? 1 : -1;
+  }
+  return 0;
+}
+
+// 更新清单地址（OSS 上的 JSON，见 scripts/gen-update-manifest.mjs 生成）
+const UPDATE_MANIFEST_URL = 'https://wizpatent.oss-cn-shenzhen.aliyuncs.com/kynsage-latest.json';
+
 function createAppRouter(): any {
   return t.router({
     ping: t.procedure.query(() => 'pong'),
     getPlatform: t.procedure.query(() => process.platform),
+    // 检查更新：main 侧直接 fetch OSS 上的 JSON 清单（不走渲染进程，规避 CORS），
+    // 比对当前版本，返回是否有新版及对应平台的下载地址。
+    checkUpdate: t.procedure.query(async () => {
+      let current = '0.0.0';
+      try {
+        const { app } = await import('electron');
+        current = app.getVersion();
+      } catch { /* 非 electron 环境（测试）保留兜底 */ }
+      const res = await fetch(UPDATE_MANIFEST_URL, { redirect: 'follow' });
+      if (!res.ok) throw new Error(`更新服务器返回 ${res.status}`);
+      const m = (await res.json()) as { version?: string; notes?: string; downloads?: Record<string, { url?: string }> };
+      const latest = m.version ?? current;
+      const key =
+        process.platform === 'win32'
+          ? 'win-x64'
+          : process.platform === 'darwin'
+            ? process.arch === 'arm64' ? 'mac-arm64' : 'mac-x64'
+            : 'linux-x64';
+      const url = m.downloads?.[key]?.url ?? null;
+      return { current, latest, hasUpdate: cmpVer(latest, current) > 0, url, notes: m.notes ?? '' };
+    }),
+    // 用系统默认浏览器打开外链（下载新版安装包）
+    openExternal: t.procedure.input(z.object({ url: z.string() })).mutation(async ({ input }) => {
+      if (!/^https?:\/\//.test(input.url)) return false;
+      const { shell } = await import('electron');
+      await shell.openExternal(input.url);
+      return true;
+    }),
     // hook settings 文件路径（main 启动 hook server 时写好），供 `claude --settings` 指向
     getHookSettingsPath: t.procedure
       .input(z.object({ claudeTheme: z.enum(['dark', 'light', 'dark-ansi', 'light-ansi', 'dark-daltonized', 'light-daltonized']).optional() }).optional())
@@ -253,11 +296,11 @@ function createAppRouter(): any {
             results.push({ name, path: cwd, mtime: stat.mtimeMs });
           } catch { /* skip */ }
         }
-        // 去重 + 按时间倒序取前10
+        // 去重 + 按时间倒序取前10（Windows 下大小写/分隔符无关，避免同目录多形式重复）
         const seen = new Set<string>();
         return results
           .sort((a, b) => b.mtime - a.mtime)
-          .filter((r) => { if (seen.has(r.path)) return false; seen.add(r.path); return true; })
+          .filter((r) => { const k = winPathKey(r.path); if (seen.has(k)) return false; seen.add(k); return true; })
           .slice(0, 10);
       } catch {
         return [];
@@ -273,7 +316,9 @@ function createAppRouter(): any {
         const path = await import('node:path');
         const os = await import('node:os');
         const projectsDir = path.join(os.homedir(), '.claude', 'projects');
-        const out: { sessionId: string; title: string; mtime: number }[] = [];
+        const out: { sessionId: string; title: string; mtime: number; cwd: string }[] = [];
+        // Windows 下大小写+分隔符无关匹配，兼容旧会话的不同路径写法
+        const wantKey = winPathKey(input.cwd);
         try {
           const hashes = await fs.readdir(projectsDir);
           for (const hash of hashes) {
@@ -289,12 +334,14 @@ function createAppRouter(): any {
               const full = path.join(dir, f);
               try {
                 const meta = await peekSession(fs, full);
-                if (meta.cwd !== input.cwd) continue;
+                if (!meta.cwd || winPathKey(meta.cwd) !== wantKey) continue;
                 const st = await fs.stat(full);
                 out.push({
                   sessionId: f.replace(/\.jsonl$/, ''),
                   title: meta.title || '未命名对话',
                   mtime: st.mtimeMs,
+                  // 返回会话保存的原始 cwd：resume 时用它启动，Claude 才能重编码命中原 projects 目录
+                  cwd: meta.cwd,
                 });
               } catch { /* 跳过坏文件 */ }
             }
@@ -378,7 +425,8 @@ function createAppRouter(): any {
           try {
             const st = await fs.stat(p);
             const dir = st.isDirectory() ? p : path.dirname(p);
-            return { ok: true as const, dir: path.resolve(dir) };
+            // 统一分隔符/形式，避免地址栏手敲路径与其他入口不一致
+            return { ok: true as const, dir: toNativePath(path.resolve(dir)) };
           } catch {
             return { ok: false as const, reason: 'notfound' as const };
           }

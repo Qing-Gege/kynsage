@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import type { ReactElement, ReactNode } from 'react';
+import { trpc } from '../../trpc';
 import { useSettingsStore } from '../../stores/settings';
 import { useThemeStore } from '../../stores/theme';
 import { playConfirmChime } from '../terminal/chime';
@@ -52,8 +53,11 @@ export function SettingsPanel({ onClose }: Props): ReactElement {
           </nav>
 
           <div className="st-rail-foot">
-            <span className="st-ver mono">KYNSAGE V{__APP_VERSION__}</span>
-            <span className="st-dot" />
+            <div className="st-ver-row">
+              <span className="st-ver mono">KYNSAGE V{__APP_VERSION__}</span>
+              <span className="st-dot" />
+            </div>
+            <UpdateChecker />
           </div>
         </aside>
 
@@ -81,6 +85,52 @@ export function SettingsPanel({ onClose }: Props): ReactElement {
           </footer>
         </section>
       </div>
+    </div>
+  );
+}
+
+// 版本区的「检查更新」：点按 → main 拉 OSS 上的 kynsage-latest.json 比对版本；
+// 有新版则给下载按钮(系统浏览器打开 OSS 安装包链接)。纯手动,不做后台自动轮询。
+type UpdState =
+  | { s: 'idle' }
+  | { s: 'checking' }
+  | { s: 'latest' }
+  | { s: 'available'; latest: string; url: string | null }
+  | { s: 'error'; msg: string };
+
+function UpdateChecker(): ReactElement {
+  const [st, setSt] = useState<UpdState>({ s: 'idle' });
+
+  const check = async (): Promise<void> => {
+    setSt({ s: 'checking' });
+    try {
+      const r = (await trpc.checkUpdate.query()) as { latest: string; hasUpdate: boolean; url: string | null };
+      setSt(r.hasUpdate ? { s: 'available', latest: r.latest, url: r.url } : { s: 'latest' });
+    } catch (e) {
+      setSt({ s: 'error', msg: e instanceof Error ? e.message : '网络错误' });
+    }
+  };
+
+  if (st.s === 'available') {
+    return (
+      <div className="st-upd st-upd-hit">
+        <span className="st-upd-txt">发现新版 V{st.latest}</span>
+        {st.url ? (
+          <button className="st-upd-dl" type="button" onClick={() => void trpc.openExternal.mutate({ url: st.url })}>下载</button>
+        ) : (
+          <button className="st-upd-btn" type="button" onClick={() => void check()}>重新检查</button>
+        )}
+      </div>
+    );
+  }
+
+  return (
+    <div className="st-upd">
+      <button className="st-upd-btn" type="button" onClick={() => void check()} disabled={st.s === 'checking'}>
+        {st.s === 'checking' ? '检查中…' : '检查更新'}
+      </button>
+      {st.s === 'latest' && <span className="st-upd-ok">已是最新</span>}
+      {st.s === 'error' && <span className="st-upd-err" title={st.msg}>检查失败</span>}
     </div>
   );
 }

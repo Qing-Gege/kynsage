@@ -166,6 +166,10 @@ importers:
         version: 6.4.3(@types/node@22.19.21)(jiti@2.7.0)
 
   packages/core:
+    dependencies:
+      '@kynsage/shared-types':
+        specifier: workspace:*
+        version: link:../shared-types
     devDependencies:
       typescript:
         specifier: ^5.7.3

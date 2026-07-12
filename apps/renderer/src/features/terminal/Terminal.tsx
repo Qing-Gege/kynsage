@@ -7,6 +7,7 @@ import type { ITheme } from '@xterm/xterm';
 import { FitAddon } from '@xterm/addon-fit';
 import { Unicode11Addon } from '@xterm/addon-unicode11';
 import { CwdTracker } from '@kynsage/core';
+import { toNativePath } from '@kynsage/shared-types';
 import { trpc } from '../../trpc';
 import '@xterm/xterm/css/xterm.css';
 
@@ -126,6 +127,11 @@ export function Terminal({ sessionId, cwd, onReady, onCwdChange, onProcessing, o
       // 开启会让每个 cell 走半透明合成、徒增开销，实色背景下有害无益。
       allowTransparency: false,
       allowProposedApi: true,
+      // Claude 会给「用户输入块」刷深色底、但前景仍用默认文字色 —— 浅色主题下就是深字压深底、看不清。
+      // minimumContrastRatio 让 xterm 对任意「前景/该 cell 自身底色」对比不足的格子动态提亮/压暗前景。
+      // 取 7:1(WCAG AAA):该深色块底(≈#4C5961)最高只能到约 7:1,唯有纯白能逼近 —— xterm 达不到该比值时
+      // 会钳到极值,于是块内文字被推成纯白,得到黑底白字的高对比观感;对比本就充足的普通文字不受影响。
+      minimumContrastRatio: 7,
       theme: buildXtermTheme(),
     });
 
@@ -235,10 +241,10 @@ export function Terminal({ sessionId, cwd, onReady, onCwdChange, onProcessing, o
       const osc7 = OSC7_RE.exec(data);
       if (osc7?.[1]) {
         let newCwd = decodeURIComponent(osc7[1]);
-        // Windows: file:///C:/Users/... → 捕获到 /C:/Users/...，转成 C:\Users\...
-        if (/^\/[A-Za-z]:/.test(newCwd)) {
-          newCwd = newCwd.slice(1).replace(/\//g, '\\');
-        }
+        // Windows: file:///C:/Users/... → 捕获到 /C:/Users/...，先剥前导 /
+        if (/^\/[A-Za-z]:/.test(newCwd)) newCwd = newCwd.slice(1);
+        // 统一归一化（盘符→反斜杠、UNC、去混合分隔符）；POSIX 原样返回
+        newCwd = toNativePath(newCwd);
         tracker.reset(newCwd);
         onCwdChange?.(newCwd);
       }

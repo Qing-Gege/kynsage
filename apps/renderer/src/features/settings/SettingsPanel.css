@@ -46,9 +46,21 @@
 .st-cat:hover .st-cat-ic, .st-cat.active .st-cat-ic { color: var(--accent); }
 .st-cat-ic svg { width: 15px; height: 15px; }
 
-.st-rail-foot { padding: 12px 18px; border-top: 1px solid var(--line); display: flex; align-items: center; justify-content: space-between; }
+.st-rail-foot { padding: 12px 18px; border-top: 1px solid var(--line); display: flex; flex-direction: column; gap: 9px; }
+.st-ver-row { display: flex; align-items: center; justify-content: space-between; }
 .st-ver { font-size: var(--fs-micro); letter-spacing: .1em; color: var(--ink-4); }
 .st-dot { width: 6px; height: 6px; border-radius: 50%; background: var(--ok); box-shadow: 0 0 5px color-mix(in srgb, var(--ok) 70%, transparent); }
+/* 检查更新 */
+.st-upd { display: flex; align-items: center; gap: 8px; }
+.st-upd-btn { font-size: var(--fs-micro); letter-spacing: .04em; color: var(--ink-3); background: transparent; border: 1px solid var(--line); border-radius: 6px; padding: 4px 9px; cursor: pointer; transition: border-color .12s, color .12s; }
+.st-upd-btn:hover:not(:disabled) { color: var(--ink-1); border-color: var(--ink-4); }
+.st-upd-btn:disabled { opacity: .6; cursor: default; }
+.st-upd-ok { font-size: var(--fs-micro); color: var(--ink-4); }
+.st-upd-err { font-size: var(--fs-micro); color: var(--danger, #B42318); }
+.st-upd-hit { justify-content: space-between; }
+.st-upd-txt { font-size: var(--fs-micro); color: var(--accent); font-weight: 600; letter-spacing: .02em; }
+.st-upd-dl { font-size: var(--fs-micro); letter-spacing: .04em; color: var(--accent-ink); background: var(--accent); border: none; border-radius: 6px; padding: 4px 11px; cursor: pointer; font-weight: 600; }
+.st-upd-dl:hover { filter: brightness(1.06); }
 
 /* —— 右侧内容区 —— */
 .st-pane { display: flex; flex-direction: column; min-width: 0; min-height: 0; overflow: hidden; }

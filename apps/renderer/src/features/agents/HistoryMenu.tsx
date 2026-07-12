@@ -3,7 +3,7 @@ import type { ReactElement } from 'react';
 import { trpc } from '../../trpc';
 import './HistoryMenu.css';
 
-export interface SessionRow { sessionId: string; title: string; mtime: number; }
+export interface SessionRow { sessionId: string; title: string; mtime: number; cwd: string; }
 
 interface Props {
   cwd: string;

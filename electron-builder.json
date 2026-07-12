@@ -28,7 +28,7 @@
   "win": {
     "target": ["nsis"],
     "icon": "build/icon.ico",
-    "artifactName": "${productName}-${version}-win-${arch}.${ext}"
+    "artifactName": "kynsage-${version}-win-${arch}.${ext}"
   },
   "nsis": {
     "oneClick": false,
@@ -39,13 +39,13 @@
     "language": "2052"
   },
   "portable": {
-    "artifactName": "${productName}-${version}-win-portable.exe"
+    "artifactName": "kynsage-${version}-win-portable.exe"
   },
   "mac": {
     "target": ["dmg", "zip"],
     "category": "public.app-category.developer-tools",
     "icon": "build/icon.icns",
-    "artifactName": "${productName}-${version}-mac-${arch}.${ext}",
+    "artifactName": "kynsage-${version}-mac-${arch}.${ext}",
     "hardenedRuntime": true,
     "gatekeeperAssess": false,
     "entitlements": "build/entitlements.mac.plist",

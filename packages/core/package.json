@@ -6,6 +6,9 @@
   "exports": {
     "./*": "./dist/*.js"
   },
+  "dependencies": {
+    "@kynsage/shared-types": "workspace:*"
+  },
   "scripts": {
     "build": "tsc -b",
     "typecheck": "tsc --noEmit",
