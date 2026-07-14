@@ -17,11 +17,14 @@ interface Props {
 export function HistoryMenu({ cwd, open, onClose, onPick, align = 'right' }: Props): ReactElement | null {
   const ref = useRef<HTMLDivElement>(null);
   const [rows, setRows] = useState<SessionRow[] | null>(null);
+  const [confirmId, setConfirmId] = useState<string | null>(null);
+  const [deleting, setDeleting] = useState<string | null>(null);
 
   useEffect(() => {
     if (!open || !cwd) return;
     let cancelled = false;
     setRows(null);
+    setConfirmId(null);
     void (async () => {
       try {
         const r = (await (trpc as any).listSessions.query({ cwd })) as SessionRow[];
@@ -32,6 +35,19 @@ export function HistoryMenu({ cwd, open, onClose, onPick, align = 'right' }: Pro
     })();
     return () => { cancelled = true; };
   }, [open, cwd]);
+
+  const handleDelete = async (sessionId: string): Promise<void> => {
+    setDeleting(sessionId);
+    try {
+      await (trpc as any).deleteSession.mutate({ sessionId });
+      setRows((prev) => (prev ? prev.filter((r) => r.sessionId !== sessionId) : prev));
+    } catch {
+      /* 删除失败，保留原行 */
+    } finally {
+      setDeleting(null);
+      setConfirmId(null);
+    }
+  };
 
   useEffect(() => {
     if (!open) return;
@@ -57,11 +73,40 @@ export function HistoryMenu({ cwd, open, onClose, onPick, align = 'right' }: Pro
       ) : (
         <ul className="hist-list">
           {rows.map((s) => (
-            <li key={s.sessionId}>
+            <li key={s.sessionId} className="hist-row">
               <button type="button" className="hist-item" onClick={() => { onPick(s); onClose(); }}>
                 <span className="hist-title">{s.title}</span>
                 <span className="hist-time mono">{relTime(s.mtime)}</span>
               </button>
+              {confirmId === s.sessionId ? (
+                <div className="hist-confirm">
+                  <button
+                    type="button"
+                    className="hist-confirm-yes"
+                    disabled={deleting === s.sessionId}
+                    onClick={(e) => { e.stopPropagation(); void handleDelete(s.sessionId); }}
+                  >
+                    {deleting === s.sessionId ? '删除中…' : '确认删除'}
+                  </button>
+                  <button
+                    type="button"
+                    className="hist-confirm-no"
+                    onClick={(e) => { e.stopPropagation(); setConfirmId(null); }}
+                  >
+                    取消
+                  </button>
+                </div>
+              ) : (
+                <button
+                  type="button"
+                  className="hist-del"
+                  title="删除这条对话记录"
+                  aria-label="删除这条对话记录"
+                  onClick={(e) => { e.stopPropagation(); setConfirmId(s.sessionId); }}
+                >
+                  ×
+                </button>
+              )}
             </li>
           ))}
         </ul>

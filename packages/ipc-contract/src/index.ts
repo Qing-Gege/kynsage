@@ -350,6 +350,31 @@ function createAppRouter(): any {
         return out.sort((a, b) => b.mtime - a.mtime).slice(0, 20);
       }),
 
+    // 删除某条历史 Claude 对话（按 sessionId 定位 .jsonl 文件删除）
+    deleteSession: t.procedure
+      .input(z.object({ sessionId: z.string() }))
+      .mutation(async ({ input }) => {
+        const fs = await import('node:fs/promises');
+        const path = await import('node:path');
+        const os = await import('node:os');
+        // sessionId 必须是纯净的文件名，禁止路径穿越
+        if (!/^[A-Za-z0-9._-]+$/.test(input.sessionId)) return false;
+        const projectsDir = path.join(os.homedir(), '.claude', 'projects');
+        const target = `${input.sessionId}.jsonl`;
+        let deleted = false;
+        try {
+          const hashes = await fs.readdir(projectsDir);
+          for (const hash of hashes) {
+            const full = path.join(projectsDir, hash, target);
+            try {
+              await fs.unlink(full);
+              deleted = true;
+            } catch { /* 该目录下没有这个文件，继续找 */ }
+          }
+        } catch { return false; }
+        return deleted;
+      }),
+
     fs: t.router({
       readdir: t.procedure
         .input(z.object({ path: z.string() }))
