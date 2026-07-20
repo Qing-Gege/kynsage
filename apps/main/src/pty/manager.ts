@@ -124,8 +124,41 @@ export class PtyManager extends EventEmitter {
   kill(sessionId: string): void {
     const session = this.sessions.get(sessionId);
     if (!session) return;
-    session.ptyInstance.kill();
     this.sessions.delete(sessionId);
+    this.terminate(session, /* immediate */ false);
+  }
+
+  // 关整个 app 时同步清掉所有 PTY——退出前来不及等优雅退出的定时器,直接硬杀,避免孤儿进程
+  killAll(): void {
+    for (const session of this.sessions.values()) {
+      this.terminate(session, /* immediate */ true);
+    }
+    this.sessions.clear();
+  }
+
+  // 杀掉一个会话:先让 node-pty 关闭 shell（关掉 master fd 会给前台进程组发 SIGHUP）,
+  // 再兜底清掉整个进程组——只杀 shell 的话,claude 及其 node 子进程会变孤儿继续跑。
+  private terminate(session: PtySession, immediate: boolean): void {
+    const { ptyInstance, pid } = session;
+    try {
+      ptyInstance.kill();
+    } catch {
+      // pty 已死,忽略
+    }
+    // Windows 下 node-pty(ConPTY)会连带结束子进程树,无需再处理进程组
+    if (process.platform === 'win32' || pid <= 0) return;
+    // POSIX:node-pty 用 setsid 起了新会话,shell 即进程组组长(pgid==pid),
+    // 给「负 pid」发信号可覆盖 claude 及其后代。
+    const killGroup = (signal: NodeJS.Signals): void => {
+      try { process.kill(-pid, signal); } catch { /* 进程组已空 */ }
+    };
+    if (immediate) {
+      killGroup('SIGKILL');
+    } else {
+      killGroup('SIGTERM');
+      // 给 claude 一点时间落盘/收尾,还没退的强杀
+      setTimeout(() => killGroup('SIGKILL'), 800);
+    }
   }
 
   getSession(sessionId: string): PtySession | undefined {

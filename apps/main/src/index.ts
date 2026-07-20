@@ -126,6 +126,7 @@ const hookServer = startHookServer((evt: HookEvent) => {
 });
 
 app.on('before-quit', () => {
+  ptyManager.killAll(); // 退出前清掉所有 shell/claude 进程,别留孤儿
   hookServer.close();
   for (const w of titleWatchers.values()) w.close();
 });

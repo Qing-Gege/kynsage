@@ -1,5 +1,6 @@
 import { create } from 'zustand';
 import type { AgentSession } from '@kynsage/core';
+import { trpc } from '../trpc';
 
 interface AgentsStore {
   sessions: AgentSession[];
@@ -23,6 +24,8 @@ export const useAgentsStore = create<AgentsStore>((set, get) => ({
   },
 
   removeSession: (id) => {
+    // 关标签同时杀掉底层 PTY（shell + claude），否则进程会残留在后台
+    void (trpc as any).pty.kill.mutate({ sessionId: id }).catch(() => {});
     set((state) => {
       const filtered = state.sessions.filter((s) => s.id !== id);
       return {
