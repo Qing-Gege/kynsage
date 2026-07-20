@@ -188,24 +188,63 @@ function cmpVer(a: string, b: string): number {
   return 0;
 }
 
-// 更新清单地址（OSS 上的 JSON，见 scripts/gen-update-manifest.mjs 生成）
-const UPDATE_MANIFEST_URL = 'https://wizpatent.oss-cn-shenzhen.aliyuncs.com/kynsage-latest.json';
+// 更新清单地址（见 scripts/gen-update-manifest.mjs 生成）——海外优先、国内备用。
+// 依次尝试:先 GitHub Release（全球可达），拉不到再退回国内 OSS 兜底。
+// 每份清单里的下载地址各自指向同源（GitHub 清单指 GitHub、OSS 清单指 OSS），
+// 命中哪份就用哪份的包地址，天然配对，无需客户端再拼。
+const UPDATE_MANIFEST_SOURCES: Array<{ url: string; timeoutMs: number }> = [
+  // GitHub 在国内常超时，故设短超时，超时立刻切下一个，不干等
+  { url: 'https://github.com/Qing-Gege/kynsage/releases/latest/download/kynsage-latest.json', timeoutMs: 3500 },
+  { url: 'https://wizpatent.oss-cn-shenzhen.aliyuncs.com/kynsage-latest.json', timeoutMs: 8000 },
+];
+
+interface UpdateManifest {
+  version?: string;
+  notes?: string;
+  downloads?: Record<string, { url?: string }>;
+}
+
+// 拉单个清单，带超时（AbortController）。失败/超时抛错，交给上层继续 fallback。
+async function fetchManifest(url: string, timeoutMs: number): Promise<UpdateManifest> {
+  const ac = new AbortController();
+  const timer = setTimeout(() => ac.abort(), timeoutMs);
+  try {
+    const res = await fetch(url, { redirect: 'follow', signal: ac.signal });
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    const m = (await res.json()) as UpdateManifest;
+    if (!m.version) throw new Error('清单缺 version 字段');
+    return m;
+  } finally {
+    clearTimeout(timer);
+  }
+}
+
+// 按顺序尝试所有清单源，第一个成功即返回；全失败则抛出汇总错误。
+async function fetchManifestWithFallback(): Promise<UpdateManifest> {
+  const errors: string[] = [];
+  for (const src of UPDATE_MANIFEST_SOURCES) {
+    try {
+      return await fetchManifest(src.url, src.timeoutMs);
+    } catch (e) {
+      errors.push(`${new URL(src.url).host}: ${e instanceof Error ? e.message : String(e)}`);
+    }
+  }
+  throw new Error(`更新检查失败（已试 ${UPDATE_MANIFEST_SOURCES.length} 个源）：${errors.join('；')}`);
+}
 
 function createAppRouter(): any {
   return t.router({
     ping: t.procedure.query(() => 'pong'),
     getPlatform: t.procedure.query(() => process.platform),
-    // 检查更新：main 侧直接 fetch OSS 上的 JSON 清单（不走渲染进程，规避 CORS），
-    // 比对当前版本，返回是否有新版及对应平台的下载地址。
+    // 检查更新：main 侧直接 fetch 清单 JSON（不走渲染进程，规避 CORS），
+    // 海外优先、国内备用地依次尝试，比对当前版本，返回是否有新版及对应平台的下载地址。
     checkUpdate: t.procedure.query(async () => {
       let current = '0.0.0';
       try {
         const { app } = await import('electron');
         current = app.getVersion();
       } catch { /* 非 electron 环境（测试）保留兜底 */ }
-      const res = await fetch(UPDATE_MANIFEST_URL, { redirect: 'follow' });
-      if (!res.ok) throw new Error(`更新服务器返回 ${res.status}`);
-      const m = (await res.json()) as { version?: string; notes?: string; downloads?: Record<string, { url?: string }> };
+      const m = await fetchManifestWithFallback();
       const latest = m.version ?? current;
       const key =
         process.platform === 'win32'
