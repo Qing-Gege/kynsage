@@ -42,7 +42,7 @@
     "artifactName": "kynsage-${version}-win-portable.exe"
   },
   "mac": {
-    "target": ["dmg", "zip"],
+    "target": ["dmg"],
     "category": "public.app-category.developer-tools",
     "icon": "build/icon.icns",
     "artifactName": "kynsage-${version}-mac-${arch}.${ext}",
