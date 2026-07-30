@@ -38,7 +38,8 @@
 /* 工作区 launcher 覆盖层 —— 浮在终端之上，保活底层 xterm */
 .launcher-overlay {
   position: absolute;
-  top: 44px; /* 让顶部 term-bar 仍可见 */
+  /* term-bar 已删，不再需要为它留出 44px —— 覆盖层直接铺满终端区 */
+  top: 0;
   left: 0; right: 0; bottom: 0;
   z-index: 20;
   display: flex;
@@ -81,43 +82,8 @@
   text-align: center;
 }
 
-/* ---- instrument term bar ---- */
-.term-bar {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  flex-shrink: 0;
-  height: 44px;
-  padding: 0 18px;
-  background: var(--bg-terminal);
-  border-bottom: 1px solid color-mix(in srgb, var(--term-ink) 14%, transparent);
-}
-
-.term-bar-name {
-  font-size: var(--fs-sm);
-  font-weight: 600;
-  color: var(--term-ink);
-}
-
-.term-bar-path {
-  font-size: var(--fs-xs);
-  color: var(--term-dim);
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-  max-width: 46%;
-  direction: rtl;
-  text-align: left;
-}
-
-.term-bar-spacer { flex: 1; }
-
-.term-bar-tag {
-  color: var(--term-dim);
-  border: 1px solid color-mix(in srgb, var(--term-dim) 40%, transparent);
-  padding: 2px 7px;
-  border-radius: 3px;
-}
+/* .term-bar 及其子项已删：状态灯/名字/关闭是顶栏 tab 的复述，
+   路径已升为通栏地址栏。终端内容现在直接顶到地址栏下面。 */
 
 /* ---- signal lights ---- */
 .sig {

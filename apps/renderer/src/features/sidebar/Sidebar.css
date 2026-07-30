@@ -5,60 +5,12 @@
   overflow: hidden;
 }
 
-/* 品牌 —— 左对齐标志锁定块（logo + 标题/副标题文字块）。
-   左内边距 8px 与下方 .nav(padding 8px) 对齐，让品牌 logo 左缘与地址栏输入框左缘同轨。 */
-.brand {
-  padding: 16px 18px 15px 8px;
-  border-bottom: 1px solid var(--line);
-  display: flex; align-items: center; gap: 11px;
-  flex-shrink: 0;
-}
-.brand-mark {
-  width: 40px; height: 40px;
-  border-radius: 9px;
-  display: block; flex: none;
-  object-fit: contain;
-}
-.brand-text { display: flex; flex-direction: column; gap: 4px; min-width: 0; }
-.brand-cn {
-  font-size: var(--fs-xl); font-weight: 700; letter-spacing: 0.04em;
-  color: var(--ink); line-height: 1; white-space: nowrap;
-}
-.brand-sub {
-  font-size: var(--fs-micro); letter-spacing: 0.12em; font-weight: 600;
-  text-transform: uppercase; color: var(--ink-4);
-  line-height: 1; white-space: nowrap;
-}
+/* 品牌区已移出侧栏 → 左上角 .brand-cell（跨顶栏两行），样式见 BrandMark.css。
+   路径输入框已删 → 通栏地址栏把「看路径」与「输路径」合成一件事。 */
 
 /* 分区 */
 .nav { flex: 1; overflow-y: auto; overflow-x: hidden; padding: 8px; }
 
-/* 跳转到路径 —— 粘贴/输入目录后回车直达（兼容 Windows「复制为路径」） */
-.path-go { margin-bottom: 4px; }
-.path-input {
-  width: 100%;
-  box-sizing: border-box;
-  padding: 8px 10px;
-  font-size: var(--fs-sm);
-  font-family: inherit;
-  color: var(--ink);
-  background: var(--bg-app);
-  border: 1px solid var(--line);
-  border-radius: 5px;
-  outline: none;
-  transition: border-color 0.12s;
-}
-.path-input::placeholder { color: var(--ink-4); }
-.path-input:focus { border-color: var(--accent); }
-.path-input.invalid {
-  border-color: var(--danger);
-  animation: path-shake 0.28s;
-}
-@keyframes path-shake {
-  0%, 100% { transform: translateX(0); }
-  20%, 60% { transform: translateX(-3px); }
-  40%, 80% { transform: translateX(3px); }
-}
 .nav-section + .nav-section { margin-top: 14px; }
 .nav-head {
   display: flex;
@@ -66,7 +18,7 @@
   justify-content: space-between;
   padding: 0 6px 5px;
 }
-.nav-head .stencil { color: var(--ink-3); font-size: var(--fs-micro); font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; }
+.nav-head .stencil { color: var(--ink-3); font-size: var(--fs-xs); font-weight: 600; letter-spacing: 0.04em; }
 .nav-head-toggle {
   width: 100%;
   background: none;
@@ -96,8 +48,9 @@
   position: relative;
   display: flex;
   align-items: center;
-  gap: 7px;
-  padding: 7px 10px;
+  gap: 8px;
+  /* 9px/10px：对齐 Windows 资源管理器导航窗格的松紧，不学 Finder 压到 6px */
+  padding: 9px 10px;
   border-radius: 3px;
   color: var(--ink-2);
   cursor: pointer;
@@ -182,50 +135,62 @@
 .nav-item-wrap[draggable="true"] { cursor: grab; }
 .nav-item-wrap.drop-before { box-shadow: inset 0 2px 0 -0.5px var(--accent); }
 
-/* 底部 —— 主题三档 seg + 设置，居中 */
+/* 底部 —— 主题三档 seg + 设置，居中。
+   高度锁 40px，与文件区底部状态条 .files-foot 严格齐平（两条底边同一水平线）。 */
 .sidebar-foot {
   border-top: 1px solid var(--line);
-  padding: 8px;
+  height: 40px;
+  padding: 0 8px;
   display: flex; align-items: center; justify-content: center; gap: 10px;
   flex-shrink: 0;
+  box-sizing: border-box;
 }
-.sidebar-foot .nav-item { flex: none; width: auto; }
+/* 底部那个「设置」项压扁到 24px，别把这行顶高 */
+.sidebar-foot .nav-item { flex: none; width: auto; padding: 5px 9px; }
 .settings-item .nav-icon { color: var(--ink-3); }
 
-/* 主题 segmented 三档 */
+/* 主题三档 —— 外框已去掉。原先是三层套圈：seg 外框 + 色片自带边框 +
+   选中再加一圈 box-shadow。色片本身就是所见即所得，外框纯属多余。
+   现在只留色片本身，选中用一道底部短线交代（不再套圈）。 */
 .seg {
   display: flex;
-  background: var(--bg-app);
-  border: 1px solid var(--line);
-  border-radius: 6px;
-  padding: 2px;
-  gap: 2px;
+  gap: 4px;
 }
 .seg button {
+  position: relative;
   width: 26px; height: 24px;
   display: grid; place-items: center;
   background: none; border: none; cursor: pointer;
   border-radius: 4px;
   color: var(--ink-3);
-  transition: background 0.15s, color 0.15s;
+  transition: color 0.15s;
 }
 .seg button:hover { color: var(--ink-2); }
-.seg button.on { background: var(--bg-elevated); color: var(--accent); box-shadow: 0 1px 1px rgba(0,0,0,.12); }
 .seg button:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
 .seg button svg { width: 13px; height: 13px; }
+/* 选中态：底部一道 accent 短线，与侧栏 nav 选中的竖条同一套语言 */
+.seg button.on::after {
+  content: "";
+  position: absolute;
+  left: 5px; right: 5px; bottom: -1px;
+  height: 2px;
+  border-radius: 2px;
+  background: var(--accent);
+}
 
 /* 主题快捷:迷你色片(底 + 强调点),所见即所得 */
 .seg--theme button.on { color: inherit; }
 .theme-chip {
   position: relative;
-  width: 15px; height: 15px;
+  width: 16px; height: 16px;
   border-radius: 4px;
   border: 1px solid var(--line-strong);
   display: block;
   transition: transform 0.12s;
 }
-.seg--theme button:hover .theme-chip { transform: scale(1.08); }
-.seg--theme button.on .theme-chip { box-shadow: 0 0 0 1.5px var(--accent); }
+.seg--theme button:hover .theme-chip { transform: scale(1.1); }
+/* 选中的色片只提亮描边，不再额外套一圈光晕 */
+.seg--theme button.on .theme-chip { border-color: var(--accent); }
 .theme-chip-acc {
   position: absolute;
   right: 1.5px; bottom: 1.5px;

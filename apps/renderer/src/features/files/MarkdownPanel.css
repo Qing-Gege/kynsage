@@ -1,7 +1,8 @@
 /* Markdown 面板 */
 .markdown-panel {
   position: fixed;
-  top: 40px; /* 落到顶部 tabstrip 标题栏下方，不遮挡顶栏 */
+  /* 顶栏现在是两行（同事条 44px + 地址栏 40px），面板从其下方开始 */
+  top: 84px;
   /* 左缘对齐 agent 区左缘、右到屏幕右缘 —— 宽度恒等于 agent 区，展开/收起两态都成立。
      旧写法 width:var(--agent-w) 在收起态(agent 列变 1fr)会比 agent 区宽，编辑器越界。 */
   left: var(--agent-left);
@@ -16,7 +17,7 @@
 }
 
 .markdown-panel-header {
-  height: 40px; /* 与右侧终端区 .term-bar 同高，两行对齐 */
+  height: 40px;
   border-bottom: 1px solid var(--line);
   display: flex;
   align-items: center;

@@ -95,8 +95,9 @@ body {
    只作用于侧栏导航 / 文件区 / 标签里的线性图标；原生彩色文件图标(img)不受影响。 */
 .nav-icon svg,
 .file-ic svg,
-.files-collapse-btn svg,
-.crumb svg,
+.brand-collapse svg,
+.addr-crumb svg,
+.addr-lead svg,
 .tab svg {
   filter: drop-shadow(0 0.5px 0 color-mix(in srgb, #000 13%, transparent));
 }
@@ -113,20 +114,23 @@ body {
 ::-webkit-scrollbar-thumb:hover { background: var(--ink-4); background-clip: padding-box; }
 
 /* ═══════════════════════════════════════════════════════════════════
-   APP grid — sidebar full-height | files | terminal
-   rows: tabstrip (案件 tab 条, 40px) | content
+   APP grid — 三行：同事条 | 地址栏 | 内容
+   借浏览器范式：第一行只管「同事」(= tab)，第二行是通栏地址栏(= URL)，
+   内容从第三行开始。logo 占据左上角、跨前两行。
+   路径敢通栏是因为 agent 的 cwd 与文件区双向绑定（见 handleCwdChange），
+   一条路径确实是唯一真相 —— 不是挪位置，是放回正确的语义层级。
    ═══════════════════════════════════════════════════════════════════ */
 .app-shell {
   display: grid;
   /* 文件区(第3列)固定 --files-w ≈ 侧栏宽；终端区(末列)minmax(0,1fr)吃掉其余全部宽度。
      终端为 1fr 天然不溢出，无需再对固定像素封顶。与收起态(.is-collapsed)同构。 */
   grid-template-columns: var(--sidebar-w) 1px var(--files-w) 1px minmax(0, 1fr);
-  grid-template-rows: 44px minmax(0, 1fr);
+  grid-template-rows: 44px 40px minmax(0, 1fr);
   height: 100vh;
   width: 100vw;
   overflow: hidden;
   /* Markdown 面板(position:fixed)靠它对齐 agent 区左缘 = 侧栏 + 文件区 + 两条分隔线。
-     收起态见下方 override(侧栏归 0)。 */
+     收起态 / 展开态见下方 override。 */
   --agent-left: calc(var(--sidebar-w) + var(--files-w) + 2px);
 }
 /* 首帧不带过渡：避免初始宽度从 CSS 默认滑动到 JS 恢复值。挂载后再开过渡，拖拽手感不变。 */
@@ -134,22 +138,75 @@ body {
   transition: grid-template-columns 0.22s ease;
 }
 
-/* 收起侧边栏：侧栏/其分隔列归 0，文件区钉死当前宽度，终端区(1fr)吃下空出的宽度 */
+/* 收起侧边栏：侧栏收成 46px 窄轨（只留狗头 + 折叠按钮），终端区(1fr)吃下空出的宽度 */
 .app-shell.is-collapsed {
-  grid-template-columns: 0 0 var(--files-w, 220px) 1px minmax(0, 1fr);
-  /* 收起态 agent 列是 1fr，实际左缘 = 文件区宽 + 分隔线 1px；不能再用 --agent-w 反推。 */
-  --agent-left: calc(var(--files-w, 220px) + 1px);
+  --agent-left: calc(46px + 1px + var(--files-w, 220px) + 1px);
 }
 
+/* 展开态：文件区吃满，但终端列留 44px 作为「回去」的把手 ——
+   拖它往左能拖回来，点它直接回终端。不留这条缝就只剩 Esc 一条路。 */
+.app-shell.is-files-expanded {
+  grid-template-columns: var(--sidebar-w) 1px minmax(0, 1fr) 1px 44px;
+  /* 展开态仍可双击 .md 打开编辑面板 —— 给它右半屏，不能沿用 100vw
+     （那会把 position:fixed 的面板整个推出屏幕，双击像没反应）。 */
+  --agent-left: 52vw;
+}
+.app-shell.is-files-expanded.is-collapsed {
+  grid-template-columns: 46px 1px minmax(0, 1fr) 1px 44px;
+  --agent-left: 52vw;
+}
+.app-shell.is-files-expanded.is-collapsed {
+  grid-template-columns: 46px 1px minmax(0, 1fr) 0 0;
+  --agent-left: 100vw;
+}
+/* 收起态：侧栏内容藏起来，但列本身留着（品牌格在同一列，靠它露出折叠按钮） */
+.app-shell.is-collapsed .sidebar { visibility: hidden; }
+/* 收起后不该还能拖侧栏宽度 —— 拖的是看不见的东西，只会让人困惑 */
+.app-shell.is-collapsed .splitter-sidebar { pointer-events: none; cursor: default; }
+.app-shell.is-collapsed .splitter-sidebar::after { display: none; }
+
+/* 侧栏从第三行开始 —— 让上面两行顶栏真正通栏，左右横线一次对齐。
+   （旧版侧栏跨 row 1/3，品牌区 71px 撑出比 44px 顶栏低 27px 的错位） */
 .sidebar {
   grid-column: 1;
-  grid-row: 1 / 3;
+  grid-row: 3;
   background: var(--bg-sidebar);
   border-right: 1px solid var(--line);
   overflow: hidden;
   min-height: 0;
   transition: background 0.4s, border-color 0.4s;
 }
+
+/* 左上角品牌格：跨前两行，40px 狗头在 84px 里居中，比旧版 71px 塞双行字宽裕 */
+.brand-cell {
+  grid-column: 1;
+  grid-row: 1 / 3;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 0 10px 0 14px;
+  background: var(--bg-sidebar);
+  border-right: 1px solid var(--line);
+  border-bottom: 1px solid var(--line);
+  min-width: 0;
+  overflow: hidden;
+  transition: background 0.4s, border-color 0.4s;
+}
+/* 收起侧栏后品牌格要留一条窄轨 —— 否则展开侧栏的按钮跟着藏了，回不来。
+   只藏名字与内边距，狗头 + 折叠按钮竖排留在左上角。 */
+.app-shell.is-collapsed {
+  grid-template-columns: 46px 1px var(--files-w, 220px) 1px minmax(0, 1fr);
+}
+.app-shell.is-collapsed .brand-cell {
+  grid-column: 1;
+  flex-direction: column;
+  justify-content: center;
+  gap: 4px;
+  padding: 0 3px;
+}
+/* 收起态狗头缩一档，给折叠按钮让出竖向空间 */
+.app-shell.is-collapsed .brand-mark { width: 26px; height: 26px; border-radius: 6px; }
+.app-shell.is-collapsed .brand-collapse { margin-left: 0; width: 24px; height: 22px; }
 
 .splitter {
   position: relative;
@@ -171,14 +228,115 @@ body {
 .splitter:hover::after { opacity: 0.55; }
 .splitter:active::after { opacity: 1; transition-delay: 0s; }
 
-.splitter-sidebar { grid-column: 2; grid-row: 1 / 3; }
-.splitter-agent { grid-column: 4; grid-row: 2; }
+.splitter-sidebar { grid-column: 2; grid-row: 1 / 4; }
+.splitter-agent { grid-column: 4; grid-row: 3; }
+/* 展开态：文件/终端之间的分隔条无处可拖，连同其悬浮把手一起隐去
+   （收起入口由地址栏那个按钮 + Esc 承担） */
+/* 展开态分隔条保留 —— 往左拖它就退出展开（与拖进去严格对称） */
 
+/* 拖到上限的瞬间：分隔条整条亮成 accent 并加宽一档，明说「再使劲就全屏」。
+   只在拖拽中存在，松手即摘 —— 常驻开销为零。 */
+html.is-at-max .splitter-agent::after {
+  opacity: 1;
+  left: -3px; right: -3px;
+}
+html.is-at-max .splitter-agent {
+  background: var(--accent);
+}
+
+/* 分隔条上那个悬停浮出的展开把手已删 —— 分隔条只有 1px 宽，:hover 几乎
+   触发不到，还跟拖拽调宽抢手势。 */
+
+/* 展开态：工作空间那条 44px 窄缝变成「回到工作空间」把手 ——
+   竖排文字 + 活信号，点一下就回。给不熟键盘的用户一条看得见的退路。
+
+   动画只在真有事时跑：全闲时没有任何 animation 属性 = 零开销；
+   跑起来也只动 opacity/transform（GPU 合成，不触发 layout/paint）。 */
+.term-peek {
+  grid-column: 5;
+  grid-row: 3;
+  display: none;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  padding: 0;
+  border: 0;
+  border-left: 1px solid var(--line);
+  background: var(--bg-terminal);
+  color: var(--term-dim);
+  cursor: pointer;
+  overflow: hidden;
+  transition: background 0.15s, color 0.15s;
+}
+
+/* 活信号 —— 全闲：静止暗点，不动 */
+.term-peek-sig {
+  font-size: 11px;
+  line-height: 1;
+  flex: none;
+  color: var(--term-dim);
+  opacity: 0.5;
+}
+/* 有人在跑：慢呼吸 */
+.term-peek.is-busy .term-peek-sig {
+  color: var(--ok);
+  opacity: 1;
+  animation: peek-breathe 2.6s ease-in-out infinite;
+}
+/* 等你拍板：赤陶红星号急跳 —— 这时候就该抓眼睛 */
+.term-peek.is-alert .term-peek-sig {
+  color: var(--accent);
+  opacity: 1;
+  font-size: 13px;
+  animation: peek-throb 0.9s ease-in-out infinite;
+}
+/* 待确认时整条缝也微微透出暖色，余光能扫到 */
+.term-peek.is-alert {
+  background: color-mix(in srgb, var(--accent) 10%, var(--bg-terminal));
+  color: var(--accent);
+}
+
+@keyframes peek-breathe {
+  0%, 100% { opacity: 0.45; }
+  50%      { opacity: 1; }
+}
+@keyframes peek-throb {
+  0%, 100% { transform: scale(1); opacity: 0.75; }
+  50%      { transform: scale(1.35); opacity: 1; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .term-peek-sig { animation: none !important; }
+}
+.app-shell.is-files-expanded .term-peek { display: flex; }
+/* 终端本体让位给把手（两者同在第 5 列，不藏会叠） */
+.app-shell.is-files-expanded .agent-area-wrapper { display: none; }
+.term-peek:hover { background: var(--bg-elevated); color: var(--accent); }
+.term-peek-label {
+  writing-mode: vertical-rl;
+  font-size: var(--fs-xs);
+  letter-spacing: 0.16em;
+  white-space: nowrap;
+  user-select: none;
+}
+.term-peek:focus-visible { outline: 2px solid var(--accent); outline-offset: -3px; }
+
+/* 第一行：只管同事（新建 + tabs + 视图切换 + 窗口控制） */
 .tabstrip-wrapper { grid-column: 3 / 6; grid-row: 1; min-width: 0; }
+
+/* 第二行：通栏地址栏 —— 横跨文件区 + 终端，路径终于放得下完整一条 */
+.addressbar-wrapper {
+  grid-column: 3 / 6;
+  grid-row: 2;
+  min-width: 0;
+  background: var(--bg-sidebar);
+  border-bottom: 1px solid var(--line);
+  transition: background 0.4s, border-color 0.4s;
+}
 
 .files-area-wrapper {
   grid-column: 3;
-  grid-row: 2;
+  grid-row: 3;
   overflow: hidden;
   min-width: 0;
   min-height: 0;
@@ -188,7 +346,7 @@ body {
 
 .agent-area-wrapper {
   grid-column: 5;
-  grid-row: 2;
+  grid-row: 3;
   overflow: hidden;
   min-width: 0;
   min-height: 0;

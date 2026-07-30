@@ -54,7 +54,7 @@ const STATE_META: Record<string, { dot: string; label: string }> = {
 };
 
 export function TerminalArea(): ReactElement {
-  const { sessions, activeSessionId, updateSession, removeSession } = useAgentsStore();
+  const { sessions, activeSessionId, updateSession } = useAgentsStore();
   const { mode, launcherOpen, setLauncherOpen } = useLayoutStore();
   const { setCurrentPath, currentPath } = useNavStore();
   const { claudePath, defaultShell, memberLabel } = useSettingsStore();
@@ -245,38 +245,21 @@ export function TerminalArea(): ReactElement {
     return (
       <div className="terminal-area-container">
         <Toaster />
-        <div className="term-bar">
-          <span className="stencil term-bar-tag">工作空间</span>
-        </div>
+        {/* 「工作空间」纯标签已删：下面的启动页写着「新对话 / 接着上次」，
+            已自解释；一个同事都没有时，顶栏那行本来就该是空的。 */}
         <WorkspaceLauncher {...launcherProps} />
       </div>
     );
   }
 
   const active = sessions.find((s) => s.id === activeSessionId) ?? sessions[0]!;
-  const activeMeta = STATE_META[active.state] ?? IDLE;
 
   return (
     <div className={`terminal-area-container ${active.state === 'awaiting-confirm' ? 'is-awaiting' : ''}`}>
       <Toaster />
-      <div className="term-bar">
-        <span className={`sig sig--${activeMeta.dot}`} />
-        <span className="term-bar-name">{active.name}</span>
-        {active.cwd && <span className="term-bar-path mono" title={active.cwd}>{active.cwd}</span>}
-        <span className="term-bar-spacer" />
-        <button
-          className="term-close-btn"
-          onClick={() => removeSession(active.id)}
-          title="关闭此 Agent"
-          type="button"
-        >
-          <svg width="10" height="10" viewBox="0 0 10 10" fill="none" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round">
-            <line x1="1" y1="1" x2="9" y2="9" />
-            <line x1="9" y1="1" x2="1" y2="9" />
-          </svg>
-        </button>
-      </div>
-
+      {/* term-bar（44px）已删：状态灯/名字/关闭按钮三项都是顶栏 tab 的复述，
+          唯一独家的「路径」已升为通栏地址栏。终端内容直接顶到地址栏下面
+          —— 与浏览器同构：tab 条 → 地址栏 → 内容，中间不插一条标题带。 */}
       <div className={`terminal-content ${mode === 'tile' ? 'tile-mode' : ''}`}>
         {sessions.map((session) => {
           const meta = STATE_META[session.state] ?? IDLE;

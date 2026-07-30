@@ -7,6 +7,9 @@ interface NavStore {
   favorites: Favorite[];
 
   setCurrentPath: (path: string) => void;
+  /** 手动刷新计数 —— 地址栏按刷新时自增，文件区据此重读目录（跨组件的一次性信号） */
+  refreshTick: number;
+  requestRefresh: () => void;
   addFavorite: (fav: Favorite) => void;
   removeFavorite: (path: string) => void;
   reorderFavorites: (fromIndex: number, toIndex: number) => void;
@@ -25,6 +28,9 @@ export const useNavStore = create<NavStore>((set) => ({
   favorites: JSON.parse(localStorage.getItem(KEY) ?? '[]'),
 
   setCurrentPath: (path) => set({ currentPath: path }),
+
+  refreshTick: 0,
+  requestRefresh: () => set((state) => ({ refreshTick: state.refreshTick + 1 })),
 
   addFavorite: (fav) =>
     set((state) => ({

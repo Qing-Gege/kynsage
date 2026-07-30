@@ -2,13 +2,11 @@ import { useState, useEffect, useRef } from 'react';
 import type { ReactElement } from 'react';
 import { useNavStore } from '../../stores/nav';
 import { useThemeStore } from '../../stores/theme';
-import { useSettingsStore } from '../../stores/settings';
 import type { ThemeName } from '@kynsage/design-tokens';
 import { THEMES as THEME_TOKENS, THEME_META } from '@kynsage/design-tokens';
 import { FileContextMenu } from '../files/FileContextMenu';
 import type { MenuItem } from '../files/FileContextMenu';
 import { trpc } from '../../trpc';
-import logoMark from '../../assets/logo-mark.svg';
 import './Sidebar.css';
 
 interface SysFolder { name: string; path: string; icon: ReactElement; }
@@ -104,9 +102,7 @@ interface CtxState { x: number; y: number; items: MenuItem[]; }
 export function Sidebar({ onSettings }: Props): ReactElement {
   const { currentPath, setCurrentPath, favorites, addFavorite, removeFavorite, reorderFavorites } = useNavStore();
   const { theme, setTheme, applyTheme } = useThemeStore();
-  // 品牌标题/副标题可在「设置 → 协作」自定义；留空回退默认，避免顶部空白。
-  const brandTitle = useSettingsStore((s) => s.brandTitle).trim() || '狗头军师';
-  const brandSubtitle = useSettingsStore((s) => s.brandSubtitle);
+  // 品牌与狗头神态已搬到左上角 BrandMark（跨顶栏两行）。
   const pickTheme = (t: ThemeName): void => { setTheme(t); applyTheme(t); };
 
   const [userFolders, setUserFolders] = useState<SysFolder[]>([]);
@@ -115,31 +111,12 @@ export function Sidebar({ onSettings }: Props): ReactElement {
   const [showRecent, setShowRecent] = useState(true);
   const [showComputer, setShowComputer] = useState(true);
   const [showQuick, setShowQuick] = useState(true);
-  const [pathDraft, setPathDraft] = useState('');
-  const [pathInvalid, setPathInvalid] = useState(false);
 
   // 快速访问：右键菜单 / 拖拽排序 / 跨区拖入（照搬 Windows，无重命名、无 + 按钮）
   const [ctx, setCtx] = useState<CtxState | null>(null);
   const dragIndex = useRef<number | null>(null);
   const [dropIndex, setDropIndex] = useState<number | null>(null);
   const [pinHover, setPinHover] = useState(false);
-
-  const goToPath = async (): Promise<void> => {
-    const raw = pathDraft.trim();
-    if (!raw) return;
-    try {
-      const res = (await (trpc as any).fs.resolveDir.query({ raw })) as { ok: boolean; dir?: string };
-      if (res.ok && res.dir) {
-        setCurrentPath(res.dir);
-        setPathDraft('');
-        setPathInvalid(false);
-      } else {
-        setPathInvalid(true);
-      }
-    } catch {
-      setPathInvalid(true);
-    }
-  };
 
   useEffect(() => {
     void (async () => {
@@ -226,29 +203,12 @@ export function Sidebar({ onSettings }: Props): ReactElement {
 
   return (
     <div className="sidebar-inner">
-      <div className="brand">
-        <img className="brand-mark" src={logoMark} alt={brandTitle} width={40} height={40} />
-        <div className="brand-text">
-          <span className="brand-cn">{brandTitle}</span>
-          <span className="brand-sub">{brandSubtitle}</span>
-        </div>
-      </div>
+      {/* 品牌区已搬到左上角 .brand-cell（跨顶栏两行）—— 见 BrandMark.tsx。
+          搬走后侧栏从第三行起，上面两行顶栏才能通栏、左右横线一次对齐。 */}
 
       <nav className="nav">
-        <div className="nav-section path-go">
-          <input
-            className={`path-input ${pathInvalid ? 'invalid' : ''}`}
-            type="text"
-            spellCheck={false}
-            autoCorrect="off"
-            autoCapitalize="off"
-            placeholder="粘贴路径，回车跳转…"
-            title={pathInvalid ? '路径不存在' : undefined}
-            value={pathDraft}
-            onChange={(e) => { setPathDraft(e.target.value); if (pathInvalid) setPathInvalid(false); }}
-            onKeyDown={(e) => { if (e.key === 'Enter') void goToPath(); }}
-          />
-        </div>
+        {/* 「粘贴路径，回车跳转」输入框已删 —— 通栏地址栏把「看路径」和「输路径」
+            合成一件事（点地址栏即可编辑粘贴），这里再留一个就是重复。 */}
 
         {/* 此电脑 —— 盘符 + 系统目录，只读（Windows 默认置于快速访问之上由用户要求调换） */}
         <div className={`nav-section ${showComputer ? '' : 'collapsed'}`}>

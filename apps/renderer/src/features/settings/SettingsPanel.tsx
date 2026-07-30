@@ -255,7 +255,7 @@ function Collab(): ReactElement {
         <input className="st-tf st-tf--name" value={brandTitle} maxLength={12} spellCheck={false}
           onChange={(e) => patchCollab({ brandTitle: e.target.value })} />
       </Row>
-      <Row label="副标题" hint="主标题下面那行小字——默认「一个狗军师，三个诸葛亮」">
+      <Row label="副标题" hint="鼠标停在左上角狗头上时浮出——默认「一个狗军师，三个诸葛亮」">
         <input className="st-tf" style={{ width: 220 }} value={brandSubtitle} maxLength={24} spellCheck={false}
           onChange={(e) => patchCollab({ brandSubtitle: e.target.value })} />
       </Row>

@@ -1,0 +1,53 @@
+/* 品牌记号 + 侧栏折叠按钮（折叠按钮管的就是侧栏，跟 logo 放一起语义更对）。 */
+.brand-mark {
+  width: 40px; height: 40px;
+  border-radius: 9px;
+  display: block; flex: none;
+  /* 明暗只用亮度/饱和微调 —— 不描边不加光，克制住。
+     transform 一律留给 WAAPI 头部手势，CSS 这边绝不碰，两套系统不打架。 */
+  transition: filter 240ms ease, opacity 240ms ease;
+  /* 甩头时绕脖颈附近转，才像点头/摆头而非原地打转 */
+  transform-origin: 50% 82%;
+  -webkit-app-region: no-drag;
+}
+
+/* —— 眼睛:唯一会随神色改变的五官，绕自身中心开合 —— */
+.brand-mark .dog-eye {
+  transform-box: fill-box;
+  transform-origin: center;
+  transition: transform 260ms cubic-bezier(0.34, 1.3, 0.64, 1);
+}
+
+/* 打盹：全员空闲，压暗收敛 + 眼睛几乎闭上（睡相靠这个，不靠动画帧） */
+.brand-mark.is-doze { filter: saturate(0.5) brightness(0.9); opacity: 0.82; }
+.brand-mark.is-doze .dog-eye { transform: scaleY(0.08); }
+
+/* 盯着：有人在跑，恢复本色，眼睛常态睁开 */
+.brand-mark.is-watch { filter: none; }
+.brand-mark.is-watch .dog-eye { transform: scaleY(1); }
+
+/* 瞪眼：有人等拍板，提亮 + 眼睛瞪大 */
+.brand-mark.is-alert { filter: saturate(1.15) brightness(1.08); }
+.brand-mark.is-alert .dog-eye { transform: scaleY(1.4); }
+
+/* 尊重系统「减少动态效果」——手势由 JS 侧跳过；这里连眼睛过渡也去掉，
+   靠「闭/睁/瞪大 + 明暗」的静态定格瞬间区分神色 */
+@media (prefers-reduced-motion: reduce) {
+  .brand-mark, .brand-mark .dog-eye { transition: none; }
+}
+
+.brand-collapse {
+  margin-left: auto;
+  flex: none;
+  display: flex; align-items: center; justify-content: center;
+  width: 26px; height: 26px;
+  border: 0;
+  background: none;
+  border-radius: 5px;
+  color: var(--ink-3);
+  cursor: pointer;
+  transition: color 0.12s, background 0.12s;
+  -webkit-app-region: no-drag;
+}
+.brand-collapse:hover { color: var(--ink); background: var(--bg-elevated); }
+.brand-collapse:focus-visible { outline: 2px solid var(--accent); outline-offset: -2px; }

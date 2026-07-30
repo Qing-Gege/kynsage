@@ -28,71 +28,8 @@
   pointer-events: none;
 }
 
-/* ---- head: breadcrumb only (sort/hidden controls retired per prototype) ---- */
-.files-head {
-  flex-shrink: 0;
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  height: 44px;
-  padding: 0 16px;
-  border-bottom: 1px solid var(--line);
-}
-
-/* 收起/展开侧边栏按钮（面包屑最左） */
-.files-collapse-btn {
-  flex-shrink: 0;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 28px;
-  height: 28px;
-  border: 1px solid var(--line);
-  background: var(--bg-app);
-  border-radius: 6px;
-  color: var(--ink-3);
-  cursor: pointer;
-  transition: background 0.12s, color 0.12s, border-color 0.12s;
-}
-.files-collapse-btn:hover { background: var(--bg-elevated); color: var(--accent); border-color: var(--line-strong); }
-
-.crumbs {
-  display: flex;
-  align-items: center;
-  min-width: 0;
-  overflow: hidden;
-}
-
-.crumb-seg { display: inline-flex; align-items: center; min-width: 0; }
-
-.crumb {
-  border: 0;
-  background: none;
-  padding: 2px 4px;
-  font-size: 14px;
-  color: var(--ink-3);
-  cursor: pointer;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  max-width: 160px;
-  border-radius: var(--radius-default);
-}
-.crumb:hover { color: var(--ink); background: var(--bg-elevated); }
-.crumb.is-current { color: var(--ink); font-weight: 500; }
-.crumb-sep { color: var(--ink-4); font-size: var(--fs-xs); padding: 0 1px; }
-
-/* 收藏星标按钮 */
-.fav-btn {
-  flex-shrink: 0;
-  display: flex; align-items: center; justify-content: center;
-  width: 24px; height: 24px;
-  background: none; border: none; cursor: pointer; border-radius: 4px;
-  color: var(--ink-3);
-  transition: color 0.12s, background 0.12s;
-}
-.fav-btn:hover { color: var(--warn); background: var(--bg-elevated); }
-.fav-btn.on { color: var(--warn); }
+/* .files-head / .files-collapse-btn / .crumbs / .fav-btn 已随 files-head 整条删除
+   —— 折叠按钮去了左上角品牌格，面包屑与星标去了通栏地址栏（AddressBar.css）。 */
 
 /* ---- list ---- */
 .files-body { flex: 1; overflow-y: auto; padding: 8px 10px 14px; }
@@ -106,14 +43,17 @@
 
 .files-list { list-style: none; margin: 0; padding: 0; }
 
+/* 窄态行：内边距放宽到 10px/12px，行与行之间留 1px 呼吸 ——
+   原先 8px 挤得像 Finder，Windows 用户看着会觉得小家子气。 */
 .file-row {
   display: flex;
   align-items: center;
   gap: 12px;
-  padding: 8px 12px;
+  padding: 10px 12px;
   cursor: pointer;
   border-radius: var(--radius-default);
 }
+.file-row + .file-row { margin-top: 1px; }
 .file-row:hover { background: var(--bg-elevated); }
 /* 选中 = 中性底 + 左 2px 赤陶红细条，与侧栏 nav 选中同一套语言（去 accent 铺底的「Claude 味」） */
 .file-row.is-selected { background: var(--bg-selected); position: relative; }
@@ -125,6 +65,214 @@
   background: var(--accent);
   border-radius: 2px;
 }
+/* ── 展开态：多列详情视图 ─────────────────────────────────────────
+   对标 Windows 11 资源管理器「详细信息」视图，不学 Finder 那套挤密排版：
+   行高 32px（Win11 列表项规格）、正文 13px、列间距宽松。
+   信息密度让位给可点性和可读性 —— 用户是 Windows 用户，手感要熟。 */
+.files-area.is-expanded {
+  --col-name-pad: 34px;   /* 名称列左侧留给图标 */
+  --col-size: 96px;
+  --col-kind: 150px;
+  --col-mtime: 150px;
+  --col-gap: 20px;
+  --row-pad: 14px;
+  --row-h: 32px;
+}
+
+/* 展开态列表左右不再吃窄态的 10px 内边距 —— 表格要贴边，列宽才算得准 */
+.files-area.is-expanded .files-body { padding: 0 0 10px; }
+
+/* 名称列封顶 560px，右侧余量交给一条空白尾列 ——
+   名称列若吃满 1fr，窗口一宽名字和后面几列之间就拉出一大片空白，
+   眼睛得横跨半屏才对上，反而更难读。 */
+.files-cols,
+.files-area.is-expanded .file-row {
+  display: grid;
+  grid-template-columns:
+    minmax(0, 560px)
+    var(--col-mtime)
+    var(--col-kind)
+    var(--col-size)
+    minmax(0, 1fr);
+  column-gap: var(--col-gap);
+  padding-left: var(--row-pad);
+  padding-right: var(--row-pad);
+  align-items: center;
+}
+
+.files-cols {
+  height: var(--row-h);
+  flex-shrink: 0;
+  border-bottom: 1px solid var(--line);
+  /* 滚动时钉住 —— 列头飘走了多列视图就没法比对 */
+  position: sticky;
+  top: 0;
+  z-index: 2;
+  background: var(--bg-sidebar);
+}
+.files-col {
+  display: flex; align-items: center; gap: 3px;
+  height: 22px;
+  padding: 0 5px;
+  border: 0;
+  background: none;
+  font-size: var(--fs-xs);
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  color: var(--ink-3);
+  cursor: pointer;
+  border-radius: 3px;
+  white-space: nowrap;
+  transition: color 0.12s, background 0.12s;
+}
+/* 首列文字与下方文件名左缘同轨（都让出图标那 34px） */
+.files-col--name { margin-left: var(--col-name-pad); }
+.files-col:hover { color: var(--ink); background: var(--bg-elevated); }
+.files-col.is-sorted { color: var(--ink); }
+.files-col-arrow { font-size: 8px; line-height: 1; opacity: 0.8; }
+
+/* 行：等高、可点面积足够（32px 对齐 Win11 列表项，不学 Finder 压到 24px） */
+.files-area.is-expanded .file-row {
+  height: var(--row-h);
+  padding-top: 0;
+  padding-bottom: 0;
+  border-radius: 0;
+  gap: 0;
+  column-gap: var(--col-gap);
+  /* 表格行连成整片，不要窄态那 1px 行距 */
+  margin-top: 0;
+}
+.files-area.is-expanded .file-row + .file-row { margin-top: 0; }
+/* 图标脱离布局流钉在名称列首，名字让出同宽 —— 两者同属第 1 列，
+   都参与网格会互相挤压 */
+.files-area.is-expanded .file-row { position: relative; }
+.files-area.is-expanded .file-row > .file-ic {
+  position: absolute;
+  left: calc(var(--row-pad) + 5px);
+  top: 50%;
+  transform: translateY(-50%);
+}
+.files-area.is-expanded .file-main {
+  grid-column: 1;
+  padding-left: var(--col-name-pad);
+  flex-direction: row;
+  align-items: center;
+  gap: 0;
+}
+.files-area.is-expanded .file-line1 { flex-wrap: nowrap; }
+/* 表格里文件名不换行，超长省略 —— 窄态那套换行会把行高撑乱 */
+.files-area.is-expanded .fn {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.files-area.is-expanded .fn-base { white-space: nowrap; overflow-wrap: normal; }
+
+/* 展开态选中：整行连片，取消窄态那道左侧竖条（表格里逐行竖条像脏点）。
+   辨识度改由整行底色 + 文件名转强调色承担。 */
+.files-area.is-expanded .file-row.is-selected::before { display: none; }
+.files-area.is-expanded .file-row.is-selected {
+  background: var(--bg-selected);
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--accent) 22%, transparent);
+}
+/* 隔行浅色底 —— 长列表横向扫读不串行（Explorer 详情视图同做法） */
+.files-area.is-expanded .file-row:nth-child(even):not(.is-selected):not(:hover) {
+  background: color-mix(in srgb, var(--ink) 2.5%, transparent);
+}
+
+.file-cell {
+  display: flex;
+  align-items: center;
+  font-size: var(--fs-md);
+  color: var(--ink-3);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  padding: 0 5px;
+}
+.file-row.is-selected .file-cell { color: var(--ink-2); }
+
+/* ── 底部状态条 ─────────────────────────────────────────────── */
+/* 底部状态条 —— 高度锁 40px，与侧栏 .sidebar-foot 严格齐平 */
+.files-foot {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  height: 40px;
+  padding: 0 8px 0 14px;
+  box-sizing: border-box;
+  border-top: 1px solid var(--line);
+  background: var(--bg-sidebar);
+}
+.files-count {
+  display: flex; align-items: center; gap: 10px;
+  font-size: var(--fs-xs);
+  color: var(--ink-3);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.files-count-sel { color: var(--accent); font-weight: 600; }
+.files-count-size { color: var(--ink-4); }
+
+/* 展开按钮做成实体 —— 原先是无底无框的幽灵按钮，用户根本注意不到 */
+.files-expand-btn {
+  flex: none;
+  display: flex; align-items: center; gap: 6px;
+  height: 24px;
+  padding: 0 10px;
+  border: 1px solid color-mix(in srgb, var(--accent) 42%, transparent);
+  background: color-mix(in srgb, var(--accent) 12%, transparent);
+  border-radius: 5px;
+  font-size: var(--fs-xs);
+  font-weight: 600;
+  color: var(--accent);
+  cursor: pointer;
+  transition: background 0.12s, border-color 0.12s, color 0.12s;
+}
+.files-expand-btn:hover {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: var(--bg-app);
+}
+/* 展开态：按钮转为「收起」，退成中性描边，不再抢眼 */
+.files-expand-btn.on {
+  border-color: var(--line-strong);
+  background: transparent;
+  color: var(--ink-2);
+}
+.files-expand-btn.on:hover { background: var(--bg-elevated); color: var(--ink); }
+.files-expand-btn:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
+
+/* 连续多选时行与行之间的圆角会切出锯齿 —— 相邻选中行拍平接缝，让选区连成一片 */
+.file-row.is-selected:has(+ .file-row.is-selected) {
+  border-bottom-left-radius: 0;
+  border-bottom-right-radius: 0;
+}
+.file-row.is-selected + .file-row.is-selected {
+  border-top-left-radius: 0;
+  border-top-right-radius: 0;
+}
+/* 连片时中间段的左侧红条要接上，否则每行一小截像虚线 */
+.file-row.is-selected:has(+ .file-row.is-selected)::before { bottom: 0; border-radius: 0; }
+.file-row.is-selected + .file-row.is-selected::before { top: 0; border-radius: 0; }
+
+/* 焦点行（键盘 cursor）：只描边不铺底，与 is-selected 的底色分层可叠加 */
+.file-row.is-cursor {
+  outline: 1px solid color-mix(in srgb, var(--accent) 45%, transparent);
+  outline-offset: -1px;
+}
+
+/* 拖拽落点：文件夹行整行实描边 + 淡底，明确「松手就进这里」 */
+.file-row.is-drop-target {
+  background: color-mix(in srgb, var(--accent) 12%, var(--bg-elevated));
+  outline: 1.5px solid var(--accent);
+  outline-offset: -1.5px;
+}
+.file-row.is-drop-target .file-ic { color: var(--accent); }
+
 .file-row.is-cut { opacity: 0.5; }
 .file-row:focus-visible { outline: 2px solid var(--accent); outline-offset: -2px; }
 

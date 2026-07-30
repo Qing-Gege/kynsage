@@ -1,0 +1,157 @@
+/* 通栏地址栏 —— 第二行，横跨文件区 + 终端。
+   路径宽度从旧版 220px（截成 U../q../d..）涨到整窗宽，第一次真能读全。 */
+.addressbar {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  height: 100%;
+  padding: 0 10px 0 14px;
+  min-width: 0;
+  /* 整行都不做拖窗区 —— 它是可交互的地址栏，拖窗交给上面那行同事条。
+     （曾把空白处设成 drag，结果拖窗区吃掉点击，路径点不动） */
+  -webkit-app-region: no-drag;
+}
+
+/* 显示态外壳：整条可点，点空白进编辑态 */
+.addr-shell {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  min-width: 0;
+  height: 26px;
+  padding: 0 6px 0 8px;
+  border: 1px solid transparent;
+  border-radius: 5px;
+  cursor: text;
+  transition: background 0.12s, border-color 0.12s;
+}
+.addr-shell:hover {
+  background: var(--bg-app);
+  border-color: var(--line);
+}
+.addr-shell:focus-visible { outline: 2px solid var(--accent); outline-offset: -2px; }
+
+.addr-lead {
+  display: flex; align-items: center;
+  color: color-mix(in srgb, var(--accent) 52%, var(--ink-3));
+  flex: none;
+}
+
+.addr-crumbs {
+  display: flex;
+  align-items: center;
+  min-width: 0;
+  overflow: hidden;
+  flex: 0 1 auto;
+}
+
+.addr-seg { display: inline-flex; align-items: center; min-width: 0; }
+
+.addr-crumb {
+  border: 0;
+  background: none;
+  padding: 3px 5px;
+  font-size: var(--fs-sm);
+  color: var(--ink-3);
+  cursor: pointer;
+  white-space: nowrap;
+  border-radius: 4px;
+  max-width: 220px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  transition: color 0.12s, background 0.12s;
+}
+.addr-crumb:hover { color: var(--ink); background: var(--bg-elevated); }
+/* 末段 = 你此刻站的地方，唯一给足墨色的一段 */
+.addr-crumb.is-current { color: var(--ink); font-weight: 600; }
+
+.addr-sep {
+  color: var(--ink-4);
+  font-size: var(--fs-xs);
+  padding: 0 1px;
+  flex: none;
+}
+
+/* 总览模式的诚实提示：别的同事在别的目录 */
+.addr-others {
+  flex: none;
+  margin-left: 6px;
+  padding: 2px 7px;
+  font-size: var(--fs-micro);
+  color: var(--ink-4);
+  background: var(--bg-elevated);
+  border-radius: 999px;
+  white-space: nowrap;
+}
+
+/* 面包屑右侧的空白 —— 撑开热区，点它进编辑态（点击由外壳 .addr-shell 接） */
+.addr-fill { flex: 1; min-width: 0; height: 100%; }
+
+/* 编辑态：整条变成一个完整路径输入框 */
+.addr-input {
+  flex: 1;
+  min-width: 0;
+  height: 26px;
+  padding: 0 9px;
+  font-size: var(--fs-sm);
+  color: var(--ink);
+  background: var(--bg-app);
+  border: 1px solid var(--accent);
+  border-radius: 5px;
+  outline: none;
+}
+.addr-input.is-invalid {
+  border-color: var(--danger, #d64545);
+  animation: addr-shake 0.22s ease;
+}
+@keyframes addr-shake {
+  0%, 100% { transform: translateX(0); }
+  25%      { transform: translateX(-3px); }
+  75%      { transform: translateX(3px); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .addr-input.is-invalid { animation: none; }
+}
+
+/* 工具组：常驻在地址栏右侧，编辑态只置灰不撤 ——
+   撤掉的话输入框会撑满并盖住按钮，布局跟着状态跳。 */
+.addr-tools {
+  flex: none;
+  display: flex;
+  align-items: center;
+  gap: 1px;
+  margin-left: 6px;
+  transition: opacity 0.14s;
+}
+.addr-tools.is-dim { opacity: 0.35; pointer-events: none; }
+/* 收藏与前面几个功能键分组 —— 它改的是「我的收藏」，不是当前目录 */
+.addr-tools-sep {
+  width: 1px;
+  height: 16px;
+  margin: 0 4px;
+  background: var(--line);
+  flex: none;
+}
+
+.addr-btn {
+  flex: none;
+  display: flex; align-items: center; justify-content: center;
+  width: 28px; height: 26px;
+  border: 0;
+  background: none;
+  border-radius: 5px;
+  color: var(--ink-3);
+  cursor: pointer;
+  transition: color 0.12s, background 0.12s;
+}
+.addr-btn:hover { color: var(--ink); background: var(--bg-elevated); }
+.addr-btn:disabled { cursor: default; }
+.addr-fav.on { color: var(--accent); }
+.addr-btn:focus-visible { outline: 2px solid var(--accent); outline-offset: -2px; }
+
+/* 刷新转一圈：目录内容没变时，用户也能确认「点到了」 */
+.addr-btn.is-spinning svg { animation: addr-spin 0.48s ease; }
+@keyframes addr-spin { to { transform: rotate(360deg); } }
+@media (prefers-reduced-motion: reduce) {
+  .addr-btn.is-spinning svg { animation: none; }
+}
