@@ -46,6 +46,10 @@ electron-builder-output/
 # Claude Code skill runtime
 .impeccable/
 
+# 图标/插画生成中间件(母版脚本在 /tmp,产物已导出到 build/,过程文件不入库)
+tmp/
+output/
+
 # scratch / local test files
 markdown-test.md
 
