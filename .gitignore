@@ -58,3 +58,7 @@ design-demos/
 
 # 原始编号截图(已复制为语义命名)
 docs/images/0*.png
+
+# Python 生成脚本的字节码缓存
+__pycache__/
+*.pyc
