@@ -39,9 +39,21 @@ TERRACOTTA = "#C2410C"  # 赤陶
 CREAM = "#FBEDE5"  # 奶油
 
 CANVAS = 1024  # 画布
-PLATE = 824  # 圆角底板(Big Sur 网格)
-RADIUS_RATIO = 0.2237  # 苹果圆角比例
-DOG_RATIO = 0.76  # 狗头占底板比例
+
+# 底板留不留透明安全边,两代 macOS 规则正好相反,必须分开出图:
+#
+#   Big Sur ~ Sequoia:图标自带圆角,四周留 ~10% 透明边,系统原样贴上不裁不填。
+#   Tahoe(26)起:系统按统一 squircle 裁切,并给非 Icon Composer 格式的图垫一层
+#     浅色玻璃底板 —— 这时透明边不再是留白,而是让系统底板从缝里透出来,
+#     变成「赤陶小方块套在奶白大方块里」,也就是 dock 上看到的那圈奶白。
+#
+# 所以 Tahoe 版底板必须铺满整幅、圆角交给系统去切;老系统版继续自带圆角。
+PLATE_LEGACY = 824  # Big Sur 网格:1024 里占 824,四周留透明边
+RADIUS_RATIO = 0.2237  # 苹果圆角比例(仅老系统版自己画圆角时用)
+
+# 狗头按「画布」定尺寸而不是按底板 —— 底板铺满后如果还按底板比例算,狗头会跟着
+# 放大一圈,顶到 squircle 的切边上。两版共用同一个绝对尺寸,光学大小才一致。
+DOG_RATIO = 0.76 * PLATE_LEGACY / CANVAS  # ≈0.612,等于原来 824 里的 0.76
 LIFT_RATIO = 0.012  # 视觉重心上移
 
 # 小尺寸另做一版。眼睛/口鼻/眉毛在原图里是「底色露出的细缝」,缩到 48px 以下细缝
@@ -124,8 +136,18 @@ def dog_bbox_in_viewbox(svg: str) -> tuple[float, float, float, float]:
     return (vx + box[0] * sx, vy + box[1] * sy, (box[2] - box[0]) * sx, (box[3] - box[1]) * sy)
 
 
-def compose_svg(dog_svg: str, invert: bool, small: bool = False, tiny: bool = False) -> str:
-    """矢量合成:圆角底板 + 居中狗头。三档母版共用这一个函数。
+def compose_svg(
+    dog_svg: str,
+    invert: bool,
+    small: bool = False,
+    tiny: bool = False,
+    full_bleed: bool = True,
+) -> str:
+    """矢量合成:赤陶底板 + 居中狗头。三档母版共用这一个函数。
+
+    full_bleed=True(默认,Tahoe 及以后):底板铺满整幅、不留透明边、不自己画圆角,
+      交给系统 squircle 去裁 —— 这样系统的浅色玻璃底板没有缝可以透出来。
+    full_bleed=False(Sequoia 及更早):底板占 824、四周留透明边、自带苹果圆角。
 
     small=True 出剪影字形版(32/48);再叠 tiny=True 出 16px 的纯轮廓版。
     """
@@ -133,7 +155,9 @@ def compose_svg(dog_svg: str, invert: bool, small: bool = False, tiny: bool = Fa
         dog_svg = simplify_for_small(dog_svg, invert, tiny)
     x, y, w, h = dog_bbox_in_viewbox(dog_svg)
     bg = TERRACOTTA if invert else CREAM
-    pad = (CANVAS - PLATE) / 2
+    plate = CANVAS if full_bleed else PLATE_LEGACY
+    pad = (CANVAS - plate) / 2
+    radius = 0 if full_bleed else plate * RADIUS_RATIO
     body = re.sub(r"^<svg[^>]*>", "", dog_svg.strip()).rsplit("</svg>", 1)[0].strip()
     body = body.replace(' class="dog-eye"', "")  # 静态图标不需要眯眼钩子
 
@@ -143,14 +167,15 @@ def compose_svg(dog_svg: str, invert: bool, small: bool = False, tiny: bool = Fa
         ratio, lift = SMALL_RATIO, 0.0
     else:
         ratio, lift = DOG_RATIO, LIFT_RATIO
-    scale = min(PLATE * ratio / w, PLATE * ratio / h)
+    # 狗头一律按 CANVAS 定尺寸,两版光学大小才一致(见 DOG_RATIO 注释)
+    scale = min(CANVAS * ratio / w, CANVAS * ratio / h)
     cx, cy = x + w / 2, y + h / 2
     tx = CANVAS / 2 - cx * scale
-    ty = CANVAS / 2 - cy * scale - PLATE * lift
+    ty = CANVAS / 2 - cy * scale - CANVAS * lift
     # 底板即裁切边界:简化版放大后溢出的部分(扇子)被切在板外
     clip = (
-        f'  <clipPath id="plate"><rect x="{pad:g}" y="{pad:g}" width="{PLATE}" '
-        f'height="{PLATE}" rx="{PLATE * RADIUS_RATIO:.1f}"/></clipPath>\n'
+        f'  <clipPath id="plate"><rect x="{pad:g}" y="{pad:g}" width="{plate}" '
+        f'height="{plate}" rx="{radius:.1f}"/></clipPath>\n'
     )
     return (
         f'<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 {CANVAS} {CANVAS}" '
@@ -158,22 +183,28 @@ def compose_svg(dog_svg: str, invert: bool, small: bool = False, tiny: bool = Fa
         f"  <!-- 由 scripts/gen-app-icon.py 从 DogHead.tsx 生成,勿手改 -->\n"
         f"{clip}"
         f'  <g clip-path="url(#plate)">\n'
-        f'    <rect x="{pad:g}" y="{pad:g}" width="{PLATE}" height="{PLATE}" '
-        f'rx="{PLATE * RADIUS_RATIO:.1f}" fill="{bg}"/>\n'
+        f'    <rect x="{pad:g}" y="{pad:g}" width="{plate}" height="{plate}" '
+        f'rx="{radius:.1f}" fill="{bg}"/>\n'
         f'    <g transform="translate({tx:.2f},{ty:.2f}) scale({scale:.5f})">\n'
         f"{body}\n    </g>\n  </g>\n</svg>\n"
     )
 
 
-def rasterize(svg: str, invert: bool) -> Image.Image:
-    """光栅母版。圆角用 PIL 重绘一遍蒙版,避免 cairo 边缘毛刺。"""
+def rasterize(svg: str, invert: bool, full_bleed: bool = True) -> Image.Image:
+    """光栅母版。老系统版的圆角用 PIL 重绘一遍蒙版,避免 cairo 边缘毛刺。
+
+    full_bleed 版是整幅实底、四角全不透明,不需要蒙版也不能加 —— 一旦加了圆角,
+    Tahoe 再裁一次 squircle,四角就会露出系统底板。
+    """
     png = cairosvg.svg2png(bytestring=svg.encode(), output_width=CANVAS, output_height=CANVAS)
     img = Image.open(io.BytesIO(png)).convert("RGBA")
-    pad = (CANVAS - PLATE) // 2
+    if full_bleed:
+        return img
+    pad = (CANVAS - PLATE_LEGACY) // 2
     mask = Image.new("L", (CANVAS, CANVAS), 0)
     ImageDraw.Draw(mask).rounded_rectangle(
-        [pad, pad, pad + PLATE - 1, pad + PLATE - 1],
-        radius=int(PLATE * RADIUS_RATIO),
+        [pad, pad, pad + PLATE_LEGACY - 1, pad + PLATE_LEGACY - 1],
+        radius=int(PLATE_LEGACY * RADIUS_RATIO),
         fill=255,
     )
     out = Image.new("RGBA", (CANVAS, CANVAS), (0, 0, 0, 0))
@@ -187,7 +218,18 @@ def pick(size: int, master: Image.Image, small: Image.Image, tiny: Image.Image) 
     return src.resize((size, size), Image.LANCZOS)
 
 
-def export(master: Image.Image, small: Image.Image, tiny: Image.Image, tmp: Path) -> None:
+def export(
+    master: Image.Image,
+    small: Image.Image,
+    tiny: Image.Image,
+    legacy: tuple[Image.Image, Image.Image, Image.Image],
+    tmp: Path,
+) -> None:
+    """icns 用满幅版(Tahoe 裁 squircle);ico / png 用自带圆角版。
+
+    Windows 任务栏和 Linux 桌面都是原样贴图、不做圆角裁切,给满幅版会变成硬角
+    色块 —— 只有 macOS 会替我们切圆角,所以只有 icns 该交出去。
+    """
     magick = shutil.which("magick") or shutil.which("convert")
     if not magick:
         sys.exit("缺 imagemagick:brew install imagemagick")
@@ -207,14 +249,15 @@ def export(master: Image.Image, small: Image.Image, tiny: Image.Image, tmp: Path
     )
 
     # ico 逐尺寸自己出图再打包(不用 auto-resize,否则 16/32 也走大母版会糊)
+    l_master, l_small, l_tiny = legacy
     layers = []
     for size in (256, 128, 64, 48, 32, 16):
         p = tmp / f"ico-{size}.png"
-        pick(size, master, small, tiny).save(p)
+        pick(size, l_master, l_small, l_tiny).save(p)
         layers.append(str(p))
     subprocess.run([magick, *layers, str(BUILD / "icon.ico")], check=True)
 
-    master.resize((512, 512), Image.LANCZOS).save(BUILD / "icon.png")
+    l_master.resize((512, 512), Image.LANCZOS).save(BUILD / "icon.png")
 
 
 def preview(
@@ -246,17 +289,26 @@ def main() -> None:
     tmp.mkdir(parents=True, exist_ok=True)
 
     dog = extract_dog_svg(invert)
+    # app 图标:满幅底板,圆角交给 Tahoe 的 squircle
     svg = compose_svg(dog, invert)
     svg_small = compose_svg(dog, invert, small=True)
     svg_tiny = compose_svg(dog, invert, small=True, tiny=True)
     (BUILD / "icon.svg").write_text(svg, encoding="utf-8")
-    # favicon 只在 16/32 出现 → 用剪影字形版,浏览器 tab 里才认得出是只狗
-    FAVICON.write_text(svg_small, encoding="utf-8")
+
+    # favicon 走自带圆角那版:浏览器 tab 不做 squircle 裁切,满幅方块在 tab 里
+    # 就是个硬角色块。且 favicon 只在 16/32 出现 → 同时用剪影字形版。
+    FAVICON.write_text(compose_svg(dog, invert, small=True, full_bleed=False), encoding="utf-8")
 
     master = rasterize(svg, invert)
     small = rasterize(svg_small, invert)
     tiny = rasterize(svg_tiny, invert)
-    export(master, small, tiny, tmp)
+
+    # ico / png(Windows / Linux)自带圆角:那两个平台不替我们裁 squircle
+    legacy = tuple(
+        rasterize(compose_svg(dog, invert, small=s, tiny=t, full_bleed=False), invert, False)
+        for s, t in ((False, False), (True, False), (True, True))
+    )
+    export(master, small, tiny, legacy, tmp)
 
     print(f"{'反色(赤陶底+奶油狗)' if invert else '正色(奶油底+赤陶狗)'} 已导出:")
     for p in ("icon.icns", "icon.ico", "icon.png", "icon.svg"):
