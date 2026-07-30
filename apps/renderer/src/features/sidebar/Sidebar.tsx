@@ -7,6 +7,7 @@ import { THEMES as THEME_TOKENS, THEME_META } from '@kynsage/design-tokens';
 import { FileContextMenu } from '../files/FileContextMenu';
 import type { MenuItem } from '../files/FileContextMenu';
 import { trpc } from '../../trpc';
+import { winPathKey } from '@kynsage/shared-types';
 import './Sidebar.css';
 
 interface SysFolder { name: string; path: string; icon: ReactElement; }
@@ -100,7 +101,8 @@ function NavIcon({ path, fallback }: { path: string; fallback: ReactElement }): 
 interface CtxState { x: number; y: number; items: MenuItem[]; }
 
 export function Sidebar({ onSettings }: Props): ReactElement {
-  const { currentPath, setCurrentPath, favorites, addFavorite, removeFavorite, reorderFavorites } = useNavStore();
+  const { currentPath, setCurrentPath, favorites, addFavorite, removeFavorite, reorderFavorites,
+    hiddenRecents, hideRecent, unhideAllRecents } = useNavStore();
   const { theme, setTheme, applyTheme } = useThemeStore();
   // 品牌与狗头神态已搬到左上角 BrandMark（跨顶栏两行）。
   const pickTheme = (t: ThemeName): void => { setTheme(t); applyTheme(t); };
@@ -150,16 +152,23 @@ export function Sidebar({ onSettings }: Props): ReactElement {
     { label: '在资源管理器中打开', sep: true, onClick: () => void (trpc as any).fs.reveal.mutate({ path }) },
   ];
 
-  // 历史项目右键菜单：可一键固定/取消固定到快速访问（Windows 逻辑，任何目录都能固定）
+  // 历史项目右键菜单：可一键固定/取消固定到快速访问（Windows 逻辑，任何目录都能固定），
+  // 外加「从历史项目移除」—— 只隐藏这一行，不碰 ~/.claude 里的会话数据。
   const dirMenu = (path: string, name: string): MenuItem[] => {
     const pinned = favorites.some((f) => f.path === path);
     return [
       pinned
         ? { label: '从快速访问取消固定', onClick: () => removeFavorite(path) }
         : { label: '固定到快速访问', onClick: () => addFavorite({ name, path }) },
-      { label: '在资源管理器中打开', sep: true, onClick: () => void (trpc as any).fs.reveal.mutate({ path }) },
+      { label: '从历史项目移除', sep: true, onClick: () => hideRecent(path) },
+      { label: '在资源管理器中打开', onClick: () => void (trpc as any).fs.reveal.mutate({ path }) },
     ];
   };
+
+  // 隐藏名单按归一化 key 比对（Windows 大小写/分隔符无关，与 main 侧去重同一把尺）
+  const hiddenSet = new Set(hiddenRecents);
+  const visibleRecents = recentDirs.filter((r) => !hiddenSet.has(winPathKey(r.path)));
+  const hiddenCount = recentDirs.length - visibleRecents.length;
 
   // 跨区拖入（从文件区拖文件夹）/ 组内排序，共用「快速访问」容器的 drop 区
   const onQuickDrop = (e: React.DragEvent, targetIndex: number): void => {
@@ -305,12 +314,26 @@ export function Sidebar({ onSettings }: Props): ReactElement {
           <div className={`nav-section ${showRecent ? '' : 'collapsed'}`}>
             <button className="nav-head nav-head-toggle" onClick={() => setShowRecent((v) => !v)} type="button">
               <span className="stencil">历史项目</span>
+              {hiddenCount > 0 && (
+                <span
+                  className="nav-head-restore"
+                  title={`唤回 ${hiddenCount} 个已移除的项目`}
+                  role="button"
+                  tabIndex={0}
+                  onClick={(e) => { e.stopPropagation(); unhideAllRecents(); }}
+                  onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.stopPropagation(); e.preventDefault(); unhideAllRecents(); } }}
+                >
+                  +{hiddenCount}
+                </span>
+              )}
               <span className="chev"><IconChevron open={showRecent} /></span>
             </button>
             {showRecent && (
               <ul className="nav-list">
-                {recentDirs.map((r) => (
-                  <li key={r.path}>
+                {visibleRecents.length === 0 ? (
+                  <li className="nav-empty">都被你请出去了。点标题旁 +{hiddenCount} 唤回</li>
+                ) : visibleRecents.map((r) => (
+                  <li key={r.path} className="nav-item-wrap">
                     <button
                       className={`nav-item ${currentPath === r.path ? 'active' : ''}`}
                       draggable
@@ -321,6 +344,16 @@ export function Sidebar({ onSettings }: Props): ReactElement {
                     >
                       <span className="nav-icon"><NavIcon path={r.path} fallback={<IconClock />} /></span>
                       <span className="nav-name">{r.name}</span>
+                    </button>
+                    <button
+                      className="nav-remove"
+                      onClick={(e) => { e.stopPropagation(); hideRecent(r.path); }}
+                      title="从历史项目移除（不删会话记录）"
+                      type="button"
+                    >
+                      <svg width="8" height="8" viewBox="0 0 10 10" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round">
+                        <line x1="1" y1="1" x2="9" y2="9"/><line x1="9" y1="1" x2="1" y2="9"/>
+                      </svg>
                     </button>
                   </li>
                 ))}

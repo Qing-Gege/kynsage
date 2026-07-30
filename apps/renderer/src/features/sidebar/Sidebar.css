@@ -26,7 +26,25 @@
   cursor: pointer;
 }
 .nav-head-toggle:hover .stencil { color: var(--ink-2); }
-.nav-head .chev { display: grid; place-items: center; color: var(--ink-4); }
+.nav-head .chev { display: grid; place-items: center; color: var(--ink-4); margin-left: auto; }
+
+/* 「历史项目」被移除后的唤回徽标 —— 只在有隐藏项时出现，
+   贴着标题走，不抢 chev 的右侧位。 */
+.nav-head-restore {
+  margin-left: 6px;
+  padding: 0 5px;
+  font-size: 10px;
+  font-weight: 600;
+  line-height: 15px;
+  border-radius: 7px;
+  color: var(--ink-3);
+  background: var(--bg-app);
+  border: 1px solid var(--line);
+  cursor: pointer;
+  transition: color 0.1s, border-color 0.1s;
+}
+.nav-head-restore:hover,
+.nav-head-restore:focus-visible { color: var(--accent); border-color: var(--accent); }
 
 .nav-list {
   list-style: none;
