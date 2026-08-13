@@ -162,9 +162,8 @@ export function TerminalArea(): ReactElement {
       },
     });
     updateSession(sessionId, { state: 'awaiting-confirm' });
-    const brand = useSettingsStore.getState().brandTitle.trim() || '狗头军师';
-    document.title = `· ${agentName} 需要确认 — ${brand}`;
-    setTimeout(() => { document.title = `${brand} / Kynsage`; }, 3000);
+    document.title = `· ${agentName} 需要确认 — 狗头军师`;
+    setTimeout(() => { document.title = '狗头军师 / Kynsage'; }, 3000);
     // 标题栏闪烁之外再「叮」一声，多开时不容易错过。
     if (useSettingsStore.getState().soundOnConfirm) playConfirmChime();
   };

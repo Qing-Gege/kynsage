@@ -99,9 +99,9 @@
 
 <br>
 
-<img src="docs/images/settings.png" alt="设置面板：自定义称呼、按钮实时预览、提示音试听" width="100%" />
+<img src="docs/images/settings.png" alt="协作设置：切换 AI 引擎、自定义同事称呼、指定默认工作文件夹与管理确认提示音" width="100%" />
 
-<p align="center"><sub>▲ <b>设置 · 全部说人话</b>　改完即时生效、自动保存，没有「保存」按钮要你记得按。</sub></p>
+<p align="center"><sub>▲ <b>协作设置 · 只留真正可调的</b>　AI 引擎、同事称呼、工作文件夹与提醒改完即时生效；产品品牌保持固定。</sub></p>
 
 <br>
 

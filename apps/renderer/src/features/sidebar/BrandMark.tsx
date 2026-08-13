@@ -1,5 +1,4 @@
 import { useEffect, useRef, type ReactElement } from 'react';
-import { useSettingsStore } from '../../stores/settings';
 import { useLayoutStore } from '../../stores/layout';
 import { useAgentsStore } from '../../stores/agents';
 import { DogHead } from './DogHead';
@@ -52,8 +51,6 @@ const GESTURES: Record<Mood, { keyframes: Keyframe[]; options: KeyframeAnimation
 };
 
 export function BrandMark(): ReactElement {
-  const brandTitle = useSettingsStore((s) => s.brandTitle).trim() || '狗头军师';
-  const brandSubtitle = useSettingsStore((s) => s.brandSubtitle);
   const sessions = useAgentsStore((s) => s.sessions);
   const { sidebarCollapsed, setSidebar } = useLayoutStore();
 
@@ -67,7 +64,7 @@ export function BrandMark(): ReactElement {
     ? '有同事等你拍板'
     : mood === 'watch'
       ? `${running} 位同事在干活`
-      : brandSubtitle || '军师在打盹，没人干活';
+      : '一个狗军师，三个诸葛亮';
 
   const svgRef = useRef<SVGSVGElement>(null);
   const prevMood = useRef<Mood>(mood);
@@ -94,7 +91,7 @@ export function BrandMark(): ReactElement {
         width={40}
         height={40}
         role="img"
-        aria-label={brandTitle}
+        aria-label="狗头军师"
       >
         <title>{hint}</title>
       </DogHead>

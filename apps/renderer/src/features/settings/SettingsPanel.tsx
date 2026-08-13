@@ -248,7 +248,7 @@ function Appearance(): ReactElement {
 
 /* ===================== 协作 ===================== */
 function Collab(): ReactElement {
-  const { agentProvider, memberLabel, brandTitle, brandSubtitle, startDir, soundOnConfirm, patchCollab, patchGeneral } = useSettingsStore();
+  const { agentProvider, memberLabel, startDir, soundOnConfirm, patchCollab, patchGeneral } = useSettingsStore();
   const echo = memberLabel.trim() || '同事';
 
   return (
@@ -264,16 +264,6 @@ function Collab(): ReactElement {
             </button>
           ))}
         </div>
-      </Row>
-
-      <GroupLabel>品牌</GroupLabel>
-      <Row label="主标题" hint="显示在左上角，应用的名字——默认「狗头军师」">
-        <input className="st-tf st-tf--name" value={brandTitle} maxLength={12} spellCheck={false}
-          onChange={(e) => patchCollab({ brandTitle: e.target.value })} />
-      </Row>
-      <Row label="副标题" hint="鼠标停在左上角狗头上时浮出——默认「一个狗军师，三个诸葛亮」">
-        <input className="st-tf" style={{ width: 220 }} value={brandSubtitle} maxLength={24} spellCheck={false}
-          onChange={(e) => patchCollab({ brandSubtitle: e.target.value })} />
       </Row>
 
       <GroupLabel>称呼</GroupLabel>

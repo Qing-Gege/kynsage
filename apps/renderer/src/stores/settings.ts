@@ -25,10 +25,6 @@ export interface GeneralPrefs {
 export interface CollabPrefs {
   /** 「新建」按钮里对 AI 帮手的称呼，如「同事」 */
   memberLabel: string;
-  /** 右上角品牌主标题（侧边栏顶部），如「狗头军师」 */
-  brandTitle: string;
-  /** 右上角品牌副标题，如「一个狗军师，三个诸葛亮」 */
-  brandSubtitle: string;
   /** 每次新建同事都单独询问工作文件夹 */
   promptDirPerAgent: boolean;
   /** 同事忙完 / 需要拍板时发通知 */
@@ -59,15 +55,13 @@ const DEFAULTS: Prefs = {
   scrollbackLines: 5000,
   copyPasteMode: 'office',
   memberLabel: '同事',
-  brandTitle: '狗头军师',
-  brandSubtitle: '一个狗军师，三个诸葛亮',
   promptDirPerAgent: false,
   notifyOnDone: true,
   soundOnConfirm: true,
 };
 
 // 旧版默认值 —— 用于一次性迁移到新默认（仅当用户没动过时才覆盖）
-const SETTINGS_VERSION = 5;
+const SETTINGS_VERSION = 6;
 const LEGACY_DEFAULTS = {
   fontFamily: 'Cascadia Code, SF Mono, Consolas, monospace',
   // 历代字号默认：13（最早）→ 14（v2）→ 16（v4）。迁移时把仍是任一旧默认的用户带到新默认。
@@ -77,7 +71,14 @@ const LEGACY_DEFAULTS = {
 function load(): Prefs {
   try {
     const raw = localStorage.getItem('kynsage.settings');
-    const stored = raw ? JSON.parse(raw) : {};
+    const stored = (raw ? JSON.parse(raw) : {}) as Partial<Prefs> & {
+      __v?: number;
+      brandTitle?: unknown;
+      brandSubtitle?: unknown;
+    };
+    // v6：品牌不再允许自定义，加载时同步清掉旧版持久化字段。
+    delete stored.brandTitle;
+    delete stored.brandSubtitle;
     const merged: Prefs & { __v?: number } = { ...DEFAULTS, ...stored };
     if (merged.agentProvider !== 'claude' && merged.agentProvider !== 'grok') {
       merged.agentProvider = DEFAULTS.agentProvider;
