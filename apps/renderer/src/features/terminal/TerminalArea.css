@@ -82,6 +82,16 @@
   text-align: center;
 }
 
+.terminal-placeholder .ph-provider {
+  margin-top: -8px;
+  padding: 2px 7px;
+  border: 1px solid color-mix(in srgb, var(--term-ink) 22%, transparent);
+  border-radius: 3px;
+  color: var(--term-ink);
+  font-size: var(--fs-xs);
+  line-height: 1.25;
+}
+
 /* .term-bar 及其子项已删：状态灯/名字/关闭是顶栏 tab 的复述，
    路径已升为通栏地址栏。终端内容现在直接顶到地址栏下面。 */
 

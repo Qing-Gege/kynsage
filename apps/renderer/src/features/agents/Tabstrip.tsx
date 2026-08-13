@@ -5,6 +5,7 @@ import { useNavStore } from '../../stores/nav';
 import { useLayoutStore } from '../../stores/layout';
 import { useSettingsStore } from '../../stores/settings';
 import { useCreateAgent } from './useCreateAgent';
+import { AGENT_PROVIDER_LABEL } from '@kynsage/shared-types';
 import './Tabstrip.css';
 
 // agent.state → 状态点 class + 中文标签（信号灯：绿处理中 / 琥珀待确认 / accent待命 / 灰已结束）
@@ -97,7 +98,7 @@ export function Tabstrip(): ReactElement {
               onClick={() => selectAgent(session.id)}
               role="tab"
               aria-selected={session.id === activeSessionId}
-              title={`${session.name} · ${label}`}
+              title={`${session.name} · ${session.kind === 'terminal' ? '终端' : AGENT_PROVIDER_LABEL[session.provider ?? 'claude']} · ${label}`}
             >
               <span className={`agent-dot ${dot}`} />
               <span className="tab-name">{session.name}</span>

@@ -1,4 +1,5 @@
 import { create } from 'zustand';
+import type { AgentProvider } from '@kynsage/shared-types';
 
 export type CopyPasteMode = 'office' | 'term';
 
@@ -13,7 +14,9 @@ export interface TerminalPrefs {
 }
 
 export interface GeneralPrefs {
+  agentProvider: AgentProvider;
   claudePath: string;
+  grokPath: string;
   /** 同事默认工作文件夹（留空＝主文件夹） */
   startDir: string;
   defaultShell: string;
@@ -43,8 +46,10 @@ interface SettingsStore extends Prefs {
 }
 
 const DEFAULTS: Prefs = {
+  agentProvider: 'claude',
   // 默认裸 'claude'：用户 PATH 里能解析它即可（与手动输入一致）。技术用户可在设置里填完整路径。
   claudePath: 'claude',
+  grokPath: 'grok',
   startDir: '',
   defaultShell: '',
   fontFamily: "'LXGW Bright Code GB', 'JetBrains Mono', monospace",
@@ -62,7 +67,7 @@ const DEFAULTS: Prefs = {
 };
 
 // 旧版默认值 —— 用于一次性迁移到新默认（仅当用户没动过时才覆盖）
-const SETTINGS_VERSION = 4;
+const SETTINGS_VERSION = 5;
 const LEGACY_DEFAULTS = {
   fontFamily: 'Cascadia Code, SF Mono, Consolas, monospace',
   // 历代字号默认：13（最早）→ 14（v2）→ 16（v4）。迁移时把仍是任一旧默认的用户带到新默认。
@@ -74,6 +79,9 @@ function load(): Prefs {
     const raw = localStorage.getItem('kynsage.settings');
     const stored = raw ? JSON.parse(raw) : {};
     const merged: Prefs & { __v?: number } = { ...DEFAULTS, ...stored };
+    if (merged.agentProvider !== 'claude' && merged.agentProvider !== 'grok') {
+      merged.agentProvider = DEFAULTS.agentProvider;
+    }
     if ((stored.__v ?? 0) < SETTINGS_VERSION) {
       // v2：默认字体改 LXGW；v4：默认字号改 16 —— 只覆盖仍是旧默认的字段，保留用户主动改过的
       if (merged.fontFamily === LEGACY_DEFAULTS.fontFamily) merged.fontFamily = DEFAULTS.fontFamily;
@@ -87,7 +95,9 @@ function load(): Prefs {
 }
 
 function save(state: Prefs): void {
-  const { patchTerminal, patchGeneral, patchCollab, ...data } = state as any;
+  const data = Object.fromEntries(
+    Object.entries(state).filter(([, value]) => typeof value !== 'function')
+  ) as Prefs;
   localStorage.setItem('kynsage.settings', JSON.stringify({ ...data, __v: SETTINGS_VERSION }));
 }
 

@@ -6,6 +6,8 @@ import { useThemeStore } from '../../stores/theme';
 import { playConfirmChime } from '../terminal/chime';
 import type { ThemeName } from '@kynsage/design-tokens';
 import { THEMES, THEME_META } from '@kynsage/design-tokens';
+import { AGENT_PROVIDER_LABEL } from '@kynsage/shared-types';
+import type { AgentProvider } from '@kynsage/shared-types';
 import './SettingsPanel.css';
 
 interface Props { onClose: () => void; }
@@ -148,6 +150,7 @@ function CatBtn({ cat, active, onPick, children }: { cat: Cat; active: Cat; onPi
 function Appearance(): ReactElement {
   const { fontFamily, fontSize, cursorStyle, cursorBlink, scrollbackLines, copyPasteMode, patchTerminal } = useSettingsStore();
   const { theme, setTheme, applyTheme } = useThemeStore();
+  const agentProvider = useSettingsStore((s) => s.agentProvider);
   const pickTheme = (t: ThemeName) => { setTheme(t); applyTheme(t); };
   const step = (d: number) => patchTerminal({ fontSize: Math.min(28, Math.max(8, fontSize + d)) });
 
@@ -232,7 +235,7 @@ function Appearance(): ReactElement {
       {/* 实时读数 */}
       <p className="st-prev-cap">实时预览 · 你的改动长这样</p>
       <div className="st-prev">
-        <div className="st-prev-bar"><span className="st-sig" /><span className="st-nm">小军 · 法务</span><span className="st-tag">Claude Code</span></div>
+        <div className="st-prev-bar"><span className="st-sig" /><span className="st-nm">小军 · 法务</span><span className="st-tag">{AGENT_PROVIDER_LABEL[agentProvider]}</span></div>
         <div className="st-prev-body" style={{ fontSize, fontFamily }}>
           <div className="st-ln"><span className="grn">›</span> 帮我把这份租赁合同改成可终止条款</div>
           <div className="st-ln dim">正在阅读 3 个参考文件…</div>
@@ -245,11 +248,24 @@ function Appearance(): ReactElement {
 
 /* ===================== 协作 ===================== */
 function Collab(): ReactElement {
-  const { memberLabel, brandTitle, brandSubtitle, startDir, soundOnConfirm, patchCollab, patchGeneral } = useSettingsStore();
+  const { agentProvider, memberLabel, brandTitle, brandSubtitle, startDir, soundOnConfirm, patchCollab, patchGeneral } = useSettingsStore();
   const echo = memberLabel.trim() || '同事';
 
   return (
     <div className="st-group">
+      <GroupLabel>AI 引擎</GroupLabel>
+      <Row label="接入的 Agent" hint="新建对话与历史记录会使用这个引擎；已经打开的对话不受影响">
+        <div className="st-seg st-seg--text" role="radiogroup" aria-label="AI 引擎">
+          {(['claude', 'grok'] as AgentProvider[]).map((provider) => (
+            <button key={provider} type="button" role="radio" aria-checked={agentProvider === provider}
+              className={agentProvider === provider ? 'on' : ''}
+              onClick={() => patchGeneral({ agentProvider: provider })}>
+              {AGENT_PROVIDER_LABEL[provider]}
+            </button>
+          ))}
+        </div>
+      </Row>
+
       <GroupLabel>品牌</GroupLabel>
       <Row label="主标题" hint="显示在左上角，应用的名字——默认「狗头军师」">
         <input className="st-tf st-tf--name" value={brandTitle} maxLength={12} spellCheck={false}
@@ -301,7 +317,7 @@ function Collab(): ReactElement {
 
 /* ===================== 高级 ===================== */
 function Advanced(): ReactElement {
-  const { claudePath, defaultShell, patchGeneral } = useSettingsStore();
+  const { claudePath, grokPath, defaultShell, patchGeneral } = useSettingsStore();
 
   return (
     <div className="st-group">
@@ -310,6 +326,12 @@ function Advanced(): ReactElement {
         <input className="st-tf mono st-tf--path" placeholder="自动查找" spellCheck={false}
           value={claudePath} onChange={(e) => patchGeneral({ claudePath: e.target.value })} />
       </Row>
+      <GroupLabel>Grok</GroupLabel>
+      <Row label="Grok 程序位置" hint="一般不用填，留空会自动找到已安装的 Grok">
+        <input className="st-tf mono st-tf--path" placeholder="自动查找" spellCheck={false}
+          value={grokPath} onChange={(e) => patchGeneral({ grokPath: e.target.value })} />
+      </Row>
+      <GroupLabel>终端</GroupLabel>
       <Row label="命令行程序" hint="保持默认即可，技术用户可指定自己惯用的">
         <input className="st-tf mono st-tf--path" placeholder="系统默认" spellCheck={false}
           value={defaultShell} onChange={(e) => patchGeneral({ defaultShell: e.target.value })} />

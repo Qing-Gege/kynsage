@@ -8,6 +8,7 @@ import { FileContextMenu } from '../files/FileContextMenu';
 import type { MenuItem } from '../files/FileContextMenu';
 import { trpc } from '../../trpc';
 import { winPathKey } from '@kynsage/shared-types';
+import { useSettingsStore } from '../../stores/settings';
 import './Sidebar.css';
 
 interface SysFolder { name: string; path: string; icon: ReactElement; }
@@ -86,7 +87,6 @@ function useNativeIcons(paths: string[]): number {
       })
     ).then(() => { if (!cancelled) setTick((n) => n + 1); });
     return () => { cancelled = true; };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [paths.join('|')]);
   return tick;
 }
@@ -104,6 +104,7 @@ export function Sidebar({ onSettings }: Props): ReactElement {
   const { currentPath, setCurrentPath, favorites, addFavorite, removeFavorite, reorderFavorites,
     hiddenRecents, hideRecent, unhideAllRecents } = useNavStore();
   const { theme, setTheme, applyTheme } = useThemeStore();
+  const agentProvider = useSettingsStore((s) => s.agentProvider);
   // 品牌与狗头神态已搬到左上角 BrandMark（跨顶栏两行）。
   const pickTheme = (t: ThemeName): void => { setTheme(t); applyTheme(t); };
 
@@ -136,15 +137,14 @@ export function Sidebar({ onSettings }: Props): ReactElement {
           // "C:\" → 本地磁盘 (C:)
           setDrives(drv.map((d) => ({ name: `本地磁盘 (${d.replace(/\\$/, '')})`, path: d })));
         }
-        const recent = (await (trpc as any).getRecentClaudeDirs.query()) as RecentDir[];
+        const recent = (await (trpc as any).getRecentAgentDirs.query({ provider: agentProvider })) as RecentDir[];
         setRecentDirs(recent);
         if (!currentPath) setCurrentPath(special.home);
       } catch (err) {
         console.error('Failed to load sidebar:', err);
       }
     })();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [agentProvider]);
 
   // —— 快速访问右键菜单（照搬 Windows：取消固定 + 在资源管理器中打开，无重命名）——
   const favMenu = (path: string): MenuItem[] => [

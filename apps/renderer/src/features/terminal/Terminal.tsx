@@ -258,7 +258,7 @@ export function Terminal({ sessionId, cwd, onReady, onCwdChange, onProcessing, o
       if (nextCwd !== prevCwd) onCwdChange?.(nextCwd);
 
       // 活动检测（兜底）：有输出=处理中；静默 10s=待命。
-      // 确认/结束的权威信号来自 Claude Code hook（见 TerminalArea），此处仅作 hook 不可用时的回退。
+      // 确认/结束的权威信号来自 provider hook（见 TerminalArea），此处仅作 hook 不可用时的回退。
       onActivityRef.current?.(); // 无节流：每批输出都报，供「待确认」态即时撤框
       if (!busyRef.current) { busyRef.current = true; onProcessing?.(); }
       if (idleTimerRef.current !== null) clearTimeout(idleTimerRef.current);

@@ -4,7 +4,7 @@ import { contextBridge, ipcRenderer, webUtils, clipboard } from 'electron';
 const dataCallbacks = new Set<(sessionId: string, data: string) => void>();
 const exitCallbacks = new Set<(sessionId: string, exitCode: number) => void>();
 const hookCallbacks = new Set<(evt: unknown) => void>();
-const titleCallbacks = new Set<(claudeSessionId: string, title: string) => void>();
+const titleCallbacks = new Set<(provider: 'claude' | 'grok', sessionId: string, title: string) => void>();
 const fsChangedCallbacks = new Set<(dir: string) => void>();
 
 ipcRenderer.on('pty-data', (_e, sessionId: string, data: string) => {
@@ -13,12 +13,12 @@ ipcRenderer.on('pty-data', (_e, sessionId: string, data: string) => {
 ipcRenderer.on('pty-exit', (_e, sessionId: string, exitCode: number) => {
   exitCallbacks.forEach((cb) => cb(sessionId, exitCode));
 });
-// Claude Code hook 事件（Notification/Stop/SessionStart）+ 标题联动（/rename）
-ipcRenderer.on('claude-hook', (_e, evt: unknown) => {
+// Provider hook 事件（Notification/Stop/SessionStart）+ 标题联动（/rename）
+ipcRenderer.on('agent-hook', (_e, evt: unknown) => {
   hookCallbacks.forEach((cb) => cb(evt));
 });
-ipcRenderer.on('claude-title', (_e, claudeSessionId: string, title: string) => {
-  titleCallbacks.forEach((cb) => cb(claudeSessionId, title));
+ipcRenderer.on('agent-title', (_e, provider: 'claude' | 'grok', sessionId: string, title: string) => {
+  titleCallbacks.forEach((cb) => cb(provider, sessionId, title));
 });
 // 文件区当前目录有增删改 → 通知渲染层刷新列表
 ipcRenderer.on('fs-changed', (_e, dir: string) => {
@@ -41,12 +41,12 @@ contextBridge.exposeInMainWorld('ptyEvents', {
   offExit: (cb: (sessionId: string, exitCode: number) => void) => { exitCallbacks.delete(cb); },
 });
 
-// Claude Code hook 信号（状态翻转 + rename 联动），按 claude session_id 对应 tab
-contextBridge.exposeInMainWorld('claudeEvents', {
+// Provider hook 信号（状态翻转 + rename 联动），按 provider + session_id 对应 tab
+contextBridge.exposeInMainWorld('agentEvents', {
   onHook: (cb: (evt: unknown) => void) => { hookCallbacks.add(cb); },
   offHook: (cb: (evt: unknown) => void) => { hookCallbacks.delete(cb); },
-  onTitle: (cb: (claudeSessionId: string, title: string) => void) => { titleCallbacks.add(cb); },
-  offTitle: (cb: (claudeSessionId: string, title: string) => void) => { titleCallbacks.delete(cb); },
+  onTitle: (cb: (provider: 'claude' | 'grok', sessionId: string, title: string) => void) => { titleCallbacks.add(cb); },
+  offTitle: (cb: (provider: 'claude' | 'grok', sessionId: string, title: string) => void) => { titleCallbacks.delete(cb); },
 });
 
 // 文件区目录变化订阅（main 端 fs.watch → 这里转给 FilesArea）

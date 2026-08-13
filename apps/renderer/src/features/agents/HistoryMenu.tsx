@@ -1,12 +1,14 @@
 import { useEffect, useRef, useState } from 'react';
 import type { ReactElement } from 'react';
 import { trpc } from '../../trpc';
+import type { AgentProvider } from '@kynsage/shared-types';
 import './HistoryMenu.css';
 
 export interface SessionRow { sessionId: string; title: string; mtime: number; cwd: string; }
 
 interface Props {
   cwd: string;
+  provider: AgentProvider;
   open: boolean;
   onClose: () => void;
   onPick: (s: SessionRow) => void;
@@ -14,7 +16,7 @@ interface Props {
 }
 
 // 历史对话下拉：打开时拉取该目录的 Claude 会话列表，点一条恢复
-export function HistoryMenu({ cwd, open, onClose, onPick, align = 'right' }: Props): ReactElement | null {
+export function HistoryMenu({ cwd, provider, open, onClose, onPick, align = 'right' }: Props): ReactElement | null {
   const ref = useRef<HTMLDivElement>(null);
   const [rows, setRows] = useState<SessionRow[] | null>(null);
   const [confirmId, setConfirmId] = useState<string | null>(null);
@@ -27,19 +29,19 @@ export function HistoryMenu({ cwd, open, onClose, onPick, align = 'right' }: Pro
     setConfirmId(null);
     void (async () => {
       try {
-        const r = (await (trpc as any).listSessions.query({ cwd })) as SessionRow[];
+        const r = (await (trpc as any).listSessions.query({ cwd, provider })) as SessionRow[];
         if (!cancelled) setRows(r);
       } catch {
         if (!cancelled) setRows([]);
       }
     })();
     return () => { cancelled = true; };
-  }, [open, cwd]);
+  }, [open, cwd, provider]);
 
   const handleDelete = async (sessionId: string): Promise<void> => {
     setDeleting(sessionId);
     try {
-      await (trpc as any).deleteSession.mutate({ sessionId });
+      await (trpc as any).deleteSession.mutate({ sessionId, provider });
       setRows((prev) => (prev ? prev.filter((r) => r.sessionId !== sessionId) : prev));
     } catch {
       /* 删除失败，保留原行 */

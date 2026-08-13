@@ -3,6 +3,7 @@ import { observable } from '@trpc/server/observable';
 import { z } from 'zod';
 import type { EventEmitter } from 'node:events';
 import { toNativePath, winPathKey } from '@kynsage/shared-types';
+import type { AgentProvider } from '@kynsage/shared-types';
 
 const t = initTRPC.create({ isServer: true });
 
@@ -204,6 +205,50 @@ interface UpdateManifest {
   downloads?: Record<string, { url?: string }>;
 }
 
+interface GrokSummary {
+  info?: { id?: string; cwd?: string };
+  session_summary?: string;
+  generated_title?: string;
+  title_is_manual?: boolean;
+  created_at?: string;
+  updated_at?: string;
+  last_active_at?: string;
+}
+
+export async function readGrokSessions(
+  fs: typeof import('node:fs/promises'),
+  path: typeof import('node:path'),
+  sessionsDir: string,
+): Promise<{ sessionId: string; title: string; mtime: number; cwd: string; dir: string }[]> {
+  const out: { sessionId: string; title: string; mtime: number; cwd: string; dir: string }[] = [];
+  let workspaces: string[];
+  try { workspaces = await fs.readdir(sessionsDir); } catch { return out; }
+  for (const workspace of workspaces) {
+    const workspaceDir = path.join(sessionsDir, workspace);
+    let entries: import('node:fs').Dirent[];
+    try { entries = await fs.readdir(workspaceDir, { withFileTypes: true }); } catch { continue; }
+    for (const entry of entries) {
+      if (!entry.isDirectory() || !/^[A-Za-z0-9._-]+$/.test(entry.name)) continue;
+      const dir = path.join(workspaceDir, entry.name);
+      try {
+        const raw = JSON.parse(await fs.readFile(path.join(dir, 'summary.json'), 'utf8')) as GrokSummary;
+        const cwd = raw.info?.cwd;
+        if (!cwd) continue;
+        const stat = await fs.stat(path.join(dir, 'summary.json'));
+        const date = raw.last_active_at || raw.updated_at || raw.created_at;
+        out.push({
+          sessionId: raw.info?.id || entry.name,
+          title: raw.generated_title || raw.session_summary || '未命名对话',
+          mtime: date ? Date.parse(date) || stat.mtimeMs : stat.mtimeMs,
+          cwd,
+          dir,
+        });
+      } catch { /* skip incomplete session */ }
+    }
+  }
+  return out;
+}
+
 // 拉单个清单，带超时（AbortController）。失败/超时抛错，交给上层继续 fallback。
 async function fetchManifest(url: string, timeoutMs: number): Promise<UpdateManifest> {
   const ac = new AbortController();
@@ -264,10 +309,10 @@ function createAppRouter(): any {
     }),
     // hook settings 文件路径（main 启动 hook server 时写好），供 `claude --settings` 指向
     getHookSettingsPath: t.procedure
-      .input(z.object({ claudeTheme: z.enum(['dark', 'light', 'dark-ansi', 'light-ansi', 'dark-daltonized', 'light-daltonized']).optional() }).optional())
+      .input(z.object({ provider: z.enum(['claude', 'grok']).default('claude'), claudeTheme: z.enum(['dark', 'light', 'dark-ansi', 'light-ansi', 'dark-daltonized', 'light-daltonized']).optional() }).optional())
       .query(async ({ input, ctx }) => {
-        const { getHookSettingsPath } = ctx as { getHookSettingsPath?: (theme?: string) => string | Promise<string> };
-        return (await getHookSettingsPath?.(input?.claudeTheme)) ?? '';
+        const { getHookSettingsPath } = ctx as { getHookSettingsPath?: (provider: AgentProvider, theme?: string) => string | Promise<string> };
+        return (await getHookSettingsPath?.(input?.provider ?? 'claude', input?.claudeTheme)) ?? '';
       }),
     // 监听某个目录的变化（文件区当前目录）；传 null 停止监听。变化时 main 推送 'fs-changed' 事件
     watchDir: t.procedure
@@ -345,17 +390,64 @@ function createAppRouter(): any {
         return [];
       }
     }),
+    getRecentAgentDirs: t.procedure
+      .input(z.object({ provider: z.enum(['claude', 'grok']).default('claude') }))
+      .query(async ({ input }) => {
+        if (input.provider === 'claude') {
+          const fs = await import('node:fs/promises');
+          const path = await import('node:path');
+          const os = await import('node:os');
+          const projectsDir = path.join(os.homedir(), '.claude', 'projects');
+          try {
+            const hashes = await fs.readdir(projectsDir);
+            const results: { name: string; path: string; mtime: number }[] = [];
+            for (const hash of hashes) {
+              const dir = path.join(projectsDir, hash);
+              let files: string[];
+              try { files = (await fs.readdir(dir)).filter((f) => f.endsWith('.jsonl')); } catch { continue; }
+              for (const file of files) {
+                try {
+                  const meta = await peekSession(fs, path.join(dir, file));
+                  if (!meta.cwd) continue;
+                  const stat = await fs.stat(path.join(dir, file));
+                  results.push({ name: path.basename(meta.cwd), path: meta.cwd, mtime: stat.mtimeMs });
+                } catch { /* skip */ }
+              }
+            }
+            const seen = new Set<string>();
+            return results.sort((a, b) => b.mtime - a.mtime)
+              .filter((row) => { const key = winPathKey(row.path); if (seen.has(key)) return false; seen.add(key); return true; })
+              .slice(0, 10);
+          } catch { return []; }
+        }
+        const fs = await import('node:fs/promises');
+        const path = await import('node:path');
+        const os = await import('node:os');
+        const rows = await readGrokSessions(fs, path, path.join(os.homedir(), '.grok', 'sessions'));
+        const seen = new Set<string>();
+        return rows.sort((a, b) => b.mtime - a.mtime)
+          .filter((row) => { const key = winPathKey(row.cwd); if (seen.has(key)) return false; seen.add(key); return true; })
+          .slice(0, 10)
+          .map((row) => ({ name: path.basename(row.cwd), path: row.cwd, mtime: row.mtime }));
+      }),
     echo: t.procedure.input(z.object({ message: z.string() })).query(({ input }) => input.message),
 
-    // 列出某工作目录的历史 Claude 对话（供「历史对话」下拉恢复）
+    // 列出某工作目录下指定 provider 的历史对话（供「历史对话」恢复）
     listSessions: t.procedure
-      .input(z.object({ cwd: z.string() }))
+      .input(z.object({ cwd: z.string(), provider: z.enum(['claude', 'grok']).default('claude') }))
       .query(async ({ input }) => {
         const fs = await import('node:fs/promises');
         const path = await import('node:path');
         const os = await import('node:os');
         const projectsDir = path.join(os.homedir(), '.claude', 'projects');
         const out: { sessionId: string; title: string; mtime: number; cwd: string }[] = [];
+        if (input.provider === 'grok') {
+          const rows = await readGrokSessions(fs, path, path.join(os.homedir(), '.grok', 'sessions'));
+          const want = winPathKey(input.cwd);
+          return rows.filter((row) => winPathKey(row.cwd) === want)
+            .sort((a, b) => b.mtime - a.mtime).slice(0, 20)
+            .map(({ sessionId, title, mtime, cwd }) => ({ sessionId, title, mtime, cwd }));
+        }
         // Windows 下大小写+分隔符无关匹配，兼容旧会话的不同路径写法
         const wantKey = winPathKey(input.cwd);
         try {
@@ -391,13 +483,20 @@ function createAppRouter(): any {
 
     // 删除某条历史 Claude 对话（按 sessionId 定位 .jsonl 文件删除）
     deleteSession: t.procedure
-      .input(z.object({ sessionId: z.string() }))
+      .input(z.object({ sessionId: z.string(), provider: z.enum(['claude', 'grok']).default('claude') }))
       .mutation(async ({ input }) => {
         const fs = await import('node:fs/promises');
         const path = await import('node:path');
         const os = await import('node:os');
         // sessionId 必须是纯净的文件名，禁止路径穿越
         if (!/^[A-Za-z0-9._-]+$/.test(input.sessionId)) return false;
+        if (input.provider === 'grok') {
+          const sessionsDir = path.join(os.homedir(), '.grok', 'sessions');
+          const rows = await readGrokSessions(fs, path, sessionsDir);
+          const matches = rows.filter((row) => row.sessionId === input.sessionId);
+          for (const row of matches) await fs.rm(row.dir, { recursive: true, force: true });
+          return matches.length > 0;
+        }
         const projectsDir = path.join(os.homedir(), '.claude', 'projects');
         const target = `${input.sessionId}.jsonl`;
         let deleted = false;

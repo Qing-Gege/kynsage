@@ -12,6 +12,8 @@ import { WorkspaceLauncher } from './WorkspaceLauncher';
 import { Terminal } from './Terminal';
 import { playConfirmChime } from './chime';
 import { trpc } from '../../trpc';
+import type { AgentProvider } from '@kynsage/shared-types';
+import { buildAgentCommand } from '../agents/provider-command';
 import toast, { Toaster } from 'react-hot-toast';
 import './TerminalArea.css';
 
@@ -30,16 +32,17 @@ declare global {
       onMaximizeChange: (cb: (maximized: boolean) => void) => void;
       reportBusyCount?: (n: number) => void;
     };
-    claudeEvents?: {
-      onHook: (cb: (evt: ClaudeHookEvent) => void) => void;
-      offHook: (cb: (evt: ClaudeHookEvent) => void) => void;
-      onTitle: (cb: (claudeSessionId: string, title: string) => void) => void;
-      offTitle: (cb: (claudeSessionId: string, title: string) => void) => void;
+    agentEvents?: {
+      onHook: (cb: (evt: AgentHookEvent) => void) => void;
+      offHook: (cb: (evt: AgentHookEvent) => void) => void;
+      onTitle: (cb: (provider: AgentProvider, sessionId: string, title: string) => void) => void;
+      offTitle: (cb: (provider: AgentProvider, sessionId: string, title: string) => void) => void;
     };
   }
 }
 
-interface ClaudeHookEvent {
+interface AgentHookEvent {
+  provider?: AgentProvider;
   hook_event_name: string;
   session_id?: string;
   notification_type?: string;
@@ -57,7 +60,7 @@ export function TerminalArea(): ReactElement {
   const { sessions, activeSessionId, updateSession } = useAgentsStore();
   const { mode, launcherOpen, setLauncherOpen } = useLayoutStore();
   const { setCurrentPath, currentPath } = useNavStore();
-  const { claudePath, defaultShell, memberLabel } = useSettingsStore();
+  const { agentProvider, claudePath, grokPath, defaultShell, memberLabel } = useSettingsStore();
   const newLabel = (memberLabel?.trim() || '同事');
   const { createInCurrentDir, restoreSession, restoreSessionById } = useCreateAgent();
   const [isWindows, setIsWindows] = useState(false);
@@ -74,14 +77,14 @@ export function TerminalArea(): ReactElement {
     let cancelled = false;
     void (async () => {
       try {
-        const r = (await (trpc as any).listSessions.query({ cwd: currentPath })) as SessionRow[];
+        const r = (await (trpc as any).listSessions.query({ cwd: currentPath, provider: agentProvider })) as SessionRow[];
         if (!cancelled) setLauncherHist(r);
       } catch {
         if (!cancelled) setLauncherHist([]);
       }
     })();
     return () => { cancelled = true; };
-  }, [launcherVisible, currentPath]);
+  }, [agentProvider, launcherVisible, currentPath]);
 
   // launcher 浮层打开时，Esc 关闭
   useEffect(() => {
@@ -95,6 +98,7 @@ export function TerminalArea(): ReactElement {
   const closeLauncher = (): void => setLauncherOpen(false);
   const launcherProps = {
     currentPath,
+    provider: agentProvider,
     hist: launcherHist,
     newLabel,
     onNew: () => { closeLauncher(); void createInCurrentDir(); },
@@ -111,16 +115,11 @@ export function TerminalArea(): ReactElement {
       // 纯终端：PTY 已在 cwd 起好 shell，不注入 claude 启动命令
       if (session?.kind === 'terminal') return;
       await new Promise((r) => setTimeout(r, 300));
-      // 项目记忆：恢复指定历史对话 / 续最近 / 全新
-      // 两平台都回退到裸 'claude'：用户 PATH 里能解析它即可。Windows 不硬拼 'claude.cmd'——
-      // claude 常以别名/函数/.ps1/.exe 提供，并不存在 .cmd 文件，硬拼会「找不到命令」。
-      const bin = claudePath || 'claude';
-      // 含空格的路径需加引号；PowerShell 调用带引号路径要用调用运算符 &
-      const quotedBin = /\s/.test(bin)
-        ? (isWindows ? `& "${bin}"` : `"${bin}"`)
-        : bin;
+      // 项目记忆：恢复指定历史对话 / 续最近 / 全新。程序位置留空时使用 provider 的 PATH 命令。
+      const provider = session?.provider ?? 'claude';
+      const bin = provider === 'grok' ? (grokPath || 'grok') : (claudePath || 'claude');
       // 注入 hook 配置（Notification/Stop/SessionStart → 本地 HTTP），不碰用户全局 settings
-      let settingsArg = '';
+      let claudeSettingsPath = '';
       try {
         // 让 claude 配色跟随 app 主题:用 *-ansi 变体 —— Claude 改用终端 16 色 ANSI
         // 面板上色(而非内置 truecolor),我们在 buildXtermTheme 里控制该面板,切主题时
@@ -128,20 +127,21 @@ export function TerminalArea(): ReactElement {
         const appTheme = useThemeStore.getState().theme;
         const isDark = THEME_META.find((m) => m.name === appTheme)?.dark ?? false;
         const claudeTheme = isDark ? 'dark-ansi' : 'light-ansi';
-        const sp = (await (trpc as any).getHookSettingsPath.query({ claudeTheme })) as string;
-        if (sp) settingsArg = ` --settings "${sp}"`;
+        const hookPath = (await (trpc as any).getHookSettingsPath.query({ provider, claudeTheme })) as string;
+        if (provider === 'claude') claudeSettingsPath = hookPath;
       } catch { /* 拿不到就不加，hook 不可用但终端仍能用 */ }
       // 新建用 --session-id 强制指定我们生成的 uuid；恢复用 --resume <id>；都已知 id 供 hook 映射
-      const idArg = session?.resumeSessionId
-        ? ` --resume ${session.resumeSessionId}`
-        : session?.resume
-          ? ' --continue'
-          : session?.claudeSessionId
-            ? ` --session-id ${session.claudeSessionId}`
-            : '';
       // 行尾用 \r（回车键），而非 \n。Windows conpty + PowerShell 只认 \r 为「提交」，
       // 写 \n 会出现命令已注入但未执行、光标停在行内的现象；\r 在 *nix shell 同样有效。
-      const cmd = `${quotedBin}${settingsArg}${idArg}\r`;
+      const cmd = buildAgentCommand({
+        provider,
+        executable: bin,
+        isWindows,
+        sessionId: session?.agentSessionId,
+        resume: session?.resume,
+        resumeSessionId: session?.resumeSessionId,
+        claudeSettingsPath,
+      });
       await (trpc as any).pty.write.mutate({ sessionId, data: cmd });
     } catch (err) {
       toast.error(`PTY 启动失败: ${err instanceof Error ? err.message : String(err)}`);
@@ -192,19 +192,19 @@ export function TerminalArea(): ReactElement {
     }
   };
 
-  // Claude Code hook 信号：按 claude session_id 找到对应 tab，驱动状态/标题。
+  // Provider hook 信号：按 provider + session_id 找到对应 tab，驱动状态/标题。
   // 替代原先脆弱的正则匹配 + 静默计时启发式。
   useEffect(() => {
-    const ce = window.claudeEvents;
+    const ce = window.agentEvents;
     if (!ce) return;
 
-    const tabFor = (claudeSessionId?: string): string | undefined => {
-      if (!claudeSessionId) return undefined;
-      return useAgentsStore.getState().sessions.find((s) => s.claudeSessionId === claudeSessionId)?.id;
+    const tabFor = (provider: AgentProvider, agentSessionId?: string): string | undefined => {
+      if (!agentSessionId) return undefined;
+      return useAgentsStore.getState().sessions.find((s) => (s.provider ?? 'claude') === provider && s.agentSessionId === agentSessionId)?.id;
     };
 
-    const onHook = (evt: ClaudeHookEvent): void => {
-      const tabId = tabFor(evt.session_id);
+    const onHook = (evt: AgentHookEvent): void => {
+      const tabId = tabFor(evt.provider ?? 'claude', evt.session_id);
       if (!tabId) return;
       const st = useAgentsStore.getState().sessions.find((s) => s.id === tabId)?.state;
       if (st === 'exited') return;
@@ -217,8 +217,8 @@ export function TerminalArea(): ReactElement {
       }
     };
 
-    const onTitle = (claudeSessionId: string, title: string): void => {
-      const tabId = tabFor(claudeSessionId);
+    const onTitle = (provider: AgentProvider, agentSessionId: string, title: string): void => {
+      const tabId = tabFor(provider, agentSessionId);
       if (tabId) updateSession(tabId, { name: title });
     };
 
@@ -228,7 +228,6 @@ export function TerminalArea(): ReactElement {
       ce.offHook(onHook);
       ce.offTitle(onTitle);
     };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   useEffect(() => {

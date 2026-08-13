@@ -3,14 +3,12 @@ import * as fs from 'node:fs';
 import * as os from 'node:os';
 import * as path from 'node:path';
 import * as crypto from 'node:crypto';
+import type { AgentProvider } from '@kynsage/shared-types';
 
-/**
- * Claude Code hook 事件（取我们关心的字段；其余忽略）。
- * 见 https://code.claude.com/docs/en/hooks —— 每个事件都带 session_id / cwd，
- * 多数还带 transcript_path。
- */
+/** Claude Code / Grok hook 的统一事件；入口会归一化字段名与事件名。 */
 export interface HookEvent {
-  hook_event_name: string;          // 'Notification' | 'Stop' | 'SessionStart' | ...
+  provider?: AgentProvider;
+  hook_event_name: string;
   session_id?: string;
   cwd?: string;
   transcript_path?: string;
@@ -18,9 +16,31 @@ export interface HookEvent {
   message?: string;
 }
 
+const EVENT_NAMES: Record<string, string> = {
+  notification: 'Notification',
+  stop: 'Stop',
+  session_start: 'SessionStart',
+  session_end: 'SessionEnd',
+  permission_denied: 'PermissionDenied',
+};
+
+export function normalizeHookEvent(parsed: Record<string, unknown>, provider: AgentProvider): HookEvent {
+  const rawName = String(parsed.hook_event_name ?? parsed.hookEventName ?? '');
+  return {
+    ...parsed,
+    provider,
+    hook_event_name: EVENT_NAMES[rawName.toLowerCase()] ?? rawName,
+    session_id: typeof parsed.session_id === 'string' ? parsed.session_id : typeof parsed.sessionId === 'string' ? parsed.sessionId : undefined,
+    cwd: typeof parsed.cwd === 'string' ? parsed.cwd : undefined,
+    notification_type: typeof parsed.notification_type === 'string' ? parsed.notification_type : typeof parsed.notificationType === 'string' ? parsed.notificationType : undefined,
+  };
+}
+
 export interface HookServer {
   /** 传给 `claude --settings <这个文件>`，里面是 Notification/Stop → http hook 配置 */
   settingsPath: string;
+  getSettingsPath(provider: AgentProvider): string;
+  grokHookPath: string;
   /** server 真实监听端口（ephemeral）。listen 完成前为 0。 */
   port: number;
   /** settings 文件已带真实端口写好后 resolve（listen 是异步绑定，端口要等回调才确定） */
@@ -32,8 +52,8 @@ export interface HookServer {
 }
 
 /**
- * 起一个只听 127.0.0.1 的本地 HTTP server 接收 Claude Code hook 回调，
- * 并把对应的 settings 文件写到磁盘（供 `--settings` 指向）。
+ * 起一个只听 127.0.0.1 的本地 HTTP server 接收 provider hook 回调，
+ * 并写出 Claude `--settings` 与 Grok 全局 hook 文件。
  *
  * 安全：仅绑定回环地址；用一次性随机 token 走 query 校验，挡掉本机其它进程乱发。
  * 跨平台：纯 http hook，不依赖 osascript/notify-send 等平台命令（Windows 友好）。
@@ -53,7 +73,9 @@ export function startHookServer(onEvent: (evt: HookEvent) => void): HookServer {
     });
     req.on('end', () => {
       try {
-        const evt = JSON.parse(body) as HookEvent;
+        const parsed = JSON.parse(body) as Record<string, unknown>;
+        const provider: AgentProvider = new URL(req.url ?? '/', 'http://127.0.0.1').searchParams.get('provider') === 'grok' ? 'grok' : 'claude';
+        const evt = normalizeHookEvent(parsed, provider);
         onEvent(evt);
       } catch {
         // 坏 payload 忽略
@@ -67,12 +89,28 @@ export function startHookServer(onEvent: (evt: HookEvent) => void): HookServer {
   const dir = path.join(os.tmpdir(), 'kynsage-hooks');
   fs.mkdirSync(dir, { recursive: true });
   const settingsPath = path.join(dir, 'hooks.settings.json');
+  const grokSettingsPath = path.join(dir, 'grok.hooks.settings.json');
+  const grokHomeHooksDir = path.join(os.homedir(), '.grok', 'hooks');
+  const grokHookPath = path.join(grokHomeHooksDir, `kynsage-${process.pid}.json`);
+  try {
+    for (const file of fs.readdirSync(grokHomeHooksDir)) {
+      const match = /^kynsage-(\d+)\.json$/.exec(file);
+      if (!match) continue;
+      try {
+        process.kill(Number(match[1]), 0);
+      } catch (error) {
+        if ((error as NodeJS.ErrnoException).code === 'ESRCH') fs.unlinkSync(path.join(grokHomeHooksDir, file));
+      }
+    }
+  } catch { /* directory may not exist yet */ }
 
   // 当前写出的 settings 对象（listen 回调里赋值）；setTheme 据此合并 theme 后重写文件。
   let settings: Record<string, unknown> | null = null;
 
   const result: HookServer = {
     settingsPath,
+    getSettingsPath: (provider) => provider === 'grok' ? grokSettingsPath : settingsPath,
+    grokHookPath,
     port: 0,
     ready: Promise.resolve(), // 占位，下面覆盖
     setTheme: (theme: string | undefined) => {
@@ -92,7 +130,8 @@ export function startHookServer(onEvent: (evt: HookEvent) => void): HookServer {
       const port = addr && typeof addr === 'object' ? addr.port : 0;
       result.port = port;
 
-      const url = `http://127.0.0.1:${port}/?token=${token}`;
+      const url = `http://127.0.0.1:${port}/?token=${token}&provider=claude`;
+      const grokUrl = `http://127.0.0.1:${port}/?token=${token}&provider=grok`;
       settings = {
         hooks: {
           // 需要用户介入：权限确认 / 空闲等待输入
@@ -110,6 +149,23 @@ export function startHookServer(onEvent: (evt: HookEvent) => void): HookServer {
         },
       };
       fs.writeFileSync(settingsPath, JSON.stringify(settings, null, 2), 'utf8');
+      fs.writeFileSync(grokSettingsPath, JSON.stringify({
+        hooks: {
+          Notification: [{ hooks: [{ type: 'http', url: grokUrl, timeout: 5 }] }],
+          Stop: [{ hooks: [{ type: 'http', url: grokUrl, timeout: 5 }] }],
+          SessionStart: [{ hooks: [{ type: 'http', url: grokUrl, timeout: 5 }] }],
+        },
+      }, null, 2), 'utf8');
+      try {
+        fs.mkdirSync(grokHomeHooksDir, { recursive: true });
+        fs.writeFileSync(grokHookPath, JSON.stringify({
+          hooks: {
+            Notification: [{ hooks: [{ type: 'http', url: grokUrl, timeout: 5 }] }],
+            Stop: [{ hooks: [{ type: 'http', url: grokUrl, timeout: 5 }] }],
+            SessionStart: [{ hooks: [{ type: 'http', url: grokUrl, timeout: 5 }] }],
+          },
+        }, null, 2), 'utf8');
+      } catch { /* Grok hooks are an enhancement; CLI still works without them. */ }
       resolve();
     });
   });

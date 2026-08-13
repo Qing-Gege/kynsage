@@ -8,6 +8,8 @@
 
 狗头军师是一个基于 Electron 的桌面应用，采用 pnpm monorepo 架构，支持 Windows（主要）/macOS/Linux。应用分为主进程（Node.js）和渲染进程（React），通过 tRPC 进行类型安全的 IPC 通信。
 
+**Agent provider：** Claude Code（默认）与 Grok Build。每个会话创建时固定 provider，设置变化只影响后续新建/历史操作。
+
 **技术栈：**
 - Electron 33
 - React 18 + TypeScript
@@ -119,7 +121,7 @@ kynsage/
 - 分隔条宽度（sidebar-w、agent-w、files-w）
 
 **settings.ts**
-- 通用配置（claudePath、startDir、defaultShell、theme）
+- 通用配置（agentProvider、claudePath、grokPath、startDir、defaultShell、theme）
 - 终端配置（fontFamily、fontSize、cursorStyle、cursorBlink、scrollback）
 
 **theme.ts**
@@ -142,7 +144,7 @@ kynsage/
 - `pty.*`：PTY 操作（spawn、write、kill、resize）
 - `fs.*`：文件系统（readdir、readFile、writeFile、getFileIcon）
 - `shell.*`：Shell 操作（openInSystem）
-- `claude.*`：Claude CLI 操作（getRecentClaudeDirs、listSessions）
+- Provider 会话：`getRecentAgentDirs`、`listSessions`、`deleteSession` 均以 `provider` 隔离
 
 **类型安全：**
 - 主进程实现 router，渲染进程通过 `trpc.*.query()` / `trpc.*.mutate()` 调用
@@ -260,29 +262,33 @@ document.documentElement.style.setProperty(key, value)
 
 ---
 
-## Agent 状态检测与标题联动（Claude Code Hook）
+## Agent 状态检测与标题联动（Provider Hook）
 
-Agent 的状态（处理中 / 待确认 / 该你了）和 tab 标题随 `/rename` 联动，**由 Claude Code 官方 hook 机制驱动**，取代早期脆弱的终端输出正则匹配（误报频发）。
+Claude Code 与 Grok 都在启动前取得 UUID，并通过各自的 `--session-id` 固定会话 id。Hook payload 在主进程归一化为统一的 `provider + session_id + hook_event_name`，渲染端只通过这一条 interface 驱动状态与标题。
+
+Claude Code 使用 app 临时目录下的 `--settings` 文件；Grok 不支持 `--settings`，按官方约定从 `~/.grok/hooks/*.json` 读取。应用只写入带当前 PID 的 `kynsage-<pid>.json`，退出时删除，并仅清理已确认进程不存在的遗留文件。历史适配器分别读取 `~/.claude/projects/*/*.jsonl` 与 `~/.grok/sessions/*/*/summary.json`；PTY 环境会补入默认安装目录 `~/.grok/bin`，GUI 启动时也能解析 `grok`。
+
+Agent 的状态（处理中 / 待确认 / 该你了）和 tab 标题随 `/rename` 联动，由 provider 官方 hook 机制驱动，取代早期脆弱的终端输出正则匹配（误报频发）。
 
 ### 整体链路
 
 ```
-spawn 前：useCreateAgent 用 crypto.randomUUID() 生成 claudeSessionId
+spawn 前：useCreateAgent 用 crypto.randomUUID() 生成 agentSessionId，并固定 provider
   ↓
-启动命令：claude --settings <hooks.settings.json> --session-id <uuid>
+启动命令：Claude 使用 --settings；Grok 从 ~/.grok/hooks 自动发现配置；两者均传 --session-id <uuid>
   （恢复对话用 --resume <id>；id 在 spawn 前已知 → hook 事件可精确对应 tab）
   ↓
 主进程 startHookServer：127.0.0.1 临时端口 + 随机 token 的本地 HTTP server
   ↓
-Claude 触发 hook（Notification / Stop / SessionStart）→ POST 到本地 server
+Provider 触发 hook（Notification / Stop / SessionStart）→ POST 到本地 server
   ↓
 主进程 onEvent：
-  - send('claude-hook', evt) → 渲染端按 session_id 映射 tab，翻状态
+  - send('agent-hook', evt) → 渲染端按 provider + session_id 映射 tab，翻状态
   - 按 session_id 定位 transcript 文件，装 fs.watch 监听 /rename
   ↓
 transcript 变化（含 /rename 写入 custom-title）→ 去抖后 peekSession 重读标题
   ↓
-send('claude-title', sessionId, title) → 渲染端更新 tab 名与 term-bar
+send('agent-title', provider, sessionId, title) → 渲染端更新 tab 名
 ```
 
 ### 关键设计与踩过的坑
@@ -306,9 +312,9 @@ send('claude-title', sessionId, title) → 渲染端更新 tab 名与 term-bar
 
 - `apps/main/src/hooks/server.ts`：本地 HTTP hook server + 写 settings
 - `apps/main/src/index.ts`：hook 事件分发、transcript 定位与 fs.watch、标题去抖重读
-- `apps/main/src/preload.ts`：`claudeEvents`（onHook/onTitle）经 contextBridge 暴露
-- `apps/renderer/src/features/terminal/TerminalArea.tsx`：按 `claudeSessionId` 映射 tab，翻状态 / 改名
-- `packages/ipc-contract/src/index.ts`：`peekSession`（解析 transcript 取 cwd + 标题）、`listSessions`、`getHookSettingsPath`
+- `apps/main/src/preload.ts`：`agentEvents`（onHook/onTitle）经 contextBridge 暴露
+- `apps/renderer/src/features/terminal/TerminalArea.tsx`：按 `provider + agentSessionId` 映射 tab，翻状态 / 改名
+- `packages/ipc-contract/src/index.ts`：Claude transcript 与 Grok summary 解析、provider 会话查询/删除、Hook 配置查询
 - `packages/ipc-contract/src/peek-session.test.ts`：锁定 transcript 字段格式的回归测试
 
 ---

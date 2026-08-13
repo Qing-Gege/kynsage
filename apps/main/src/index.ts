@@ -7,6 +7,7 @@ import { appRouter, peekSession } from '@kynsage/ipc-contract';
 import { PtyManager } from './pty/index.js';
 import { startHookServer } from './hooks/server.js';
 import type { HookEvent } from './hooks/server.js';
+import type { AgentProvider } from '@kynsage/shared-types';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -31,12 +32,12 @@ ptyManager.on('exit', (sessionId: string, exitCode: number) => {
   mainWindow?.webContents.send('pty-exit', sessionId, exitCode);
 });
 
-// --- Claude Code hook 接入 ---
+// --- Agent provider hook 接入 ---
 // 本地 HTTP server 收 Notification/Stop/SessionStart 事件，转给 renderer 驱动状态；
 // 同时按 transcript_path 监听对应 jsonl，文件变化(含 /rename)时重读标题并联动 UI。
 const titleWatchers = new Map<string, fs.FSWatcher>();    // transcriptPath -> watcher
 const titleDebounce = new Map<string, NodeJS.Timeout>();  // transcriptPath -> timer
-const titleWatchedSessions = new Set<string>();           // 已开始盯标题的 session（按 session-id 去重）
+const titleWatchedSessions = new Set<string>();           // 按 provider + session-id 去重
 
 // --- 文件区目录监听 ---
 // 渲染层每次切目录就调用 fs.watchDir(path)，主进程只盯「当前这一个」目录。
@@ -65,12 +66,16 @@ function watchDir(targetPath: string | null): void {
 // hook 的 SessionStart/Notification/Stop payload 里 transcript_path 常为 null（实测 v2.1.185），
 // 不能依赖它。但 --session-id 被 claude 采纳作 transcript 文件名（实测），故可按
 // <session-id>.jsonl 在 ~/.claude/projects/* 下定位，与 transcript_path 是否下发无关。
-async function resolveTranscriptPath(claudeSessionId: string): Promise<string | null> {
+async function resolveTranscriptPath(provider: AgentProvider, sessionId: string): Promise<string | null> {
   try {
-    const base = path.join(app.getPath('home'), '.claude', 'projects');
+    const base = provider === 'grok'
+      ? path.join(app.getPath('home'), '.grok', 'sessions')
+      : path.join(app.getPath('home'), '.claude', 'projects');
     const dirs = await fsp.readdir(base);
     for (const d of dirs) {
-      const candidate = path.join(base, d, `${claudeSessionId}.jsonl`);
+      const candidate = provider === 'grok'
+        ? path.join(base, d, sessionId, 'summary.json')
+        : path.join(base, d, `${sessionId}.jsonl`);
       try {
         await fsp.access(candidate);
         return candidate;
@@ -80,15 +85,19 @@ async function resolveTranscriptPath(claudeSessionId: string): Promise<string | 
   return null;
 }
 
-function watchTranscript(claudeSessionId: string, transcriptPath: string): void {
-  if (!claudeSessionId || !transcriptPath || titleWatchers.has(transcriptPath)) return;
+function watchTranscript(provider: AgentProvider, sessionId: string, transcriptPath: string): void {
+  if (!sessionId || !transcriptPath || titleWatchers.has(transcriptPath)) return;
   const readAndSend = (): void => {
     void (async () => {
       try {
-        const meta = await peekSession(fsp, transcriptPath);
-        if (meta.title) {
-          mainWindow?.webContents.send('claude-title', claudeSessionId, meta.title);
+        let title: string | null;
+        if (provider === 'grok') {
+          const meta = JSON.parse(await fsp.readFile(transcriptPath, 'utf8')) as { generated_title?: string; session_summary?: string };
+          title = meta.generated_title || meta.session_summary || null;
+        } else {
+          title = (await peekSession(fsp, transcriptPath)).title;
         }
+        if (title) mainWindow?.webContents.send('agent-title', provider, sessionId, title);
       } catch { /* 文件正被写/暂不可读，忽略 */ }
     })();
   };
@@ -110,24 +119,27 @@ function watchTranscript(claudeSessionId: string, transcriptPath: string): void 
 
 const hookServer = startHookServer((evt: HookEvent) => {
   if (evt.session_id) {
-    mainWindow?.webContents.send('claude-hook', evt);
+    mainWindow?.webContents.send('agent-hook', evt);
   }
   // 开始盯标题变化（/rename 联动）。payload 的 transcript_path 实测常为 null，
   // 故优先用它，缺失时按 <session-id>.jsonl 自行定位。
-  if (evt.session_id && !titleWatchedSessions.has(evt.session_id)) {
+  const provider = evt.provider ?? 'claude';
+  const watchKey = `${provider}:${evt.session_id ?? ''}`;
+  if (evt.session_id && !titleWatchedSessions.has(watchKey)) {
     const sid = evt.session_id;
-    titleWatchedSessions.add(sid);
+    titleWatchedSessions.add(watchKey);
     void (async () => {
-      const p = evt.transcript_path ?? (await resolveTranscriptPath(sid));
-      if (p) watchTranscript(sid, p);
-      else titleWatchedSessions.delete(sid); // 没找到，下次事件再试
+      const p = evt.transcript_path ?? (await resolveTranscriptPath(provider, sid));
+      if (p) watchTranscript(provider, sid, p);
+      else titleWatchedSessions.delete(watchKey); // 没找到，下次事件再试
     })();
   }
 });
 
 app.on('before-quit', () => {
-  ptyManager.killAll(); // 退出前清掉所有 shell/claude 进程,别留孤儿
+  ptyManager.killAll(); // 退出前清掉所有 shell/agent 进程,别留孤儿
   hookServer.close();
+  try { fs.unlinkSync(hookServer.grokHookPath); } catch { /* already removed */ }
   for (const w of titleWatchers.values()) w.close();
 });
 
@@ -156,10 +168,10 @@ ipcMain.on('electron-trpc-message', async (event, op) => {
         documents: app.getPath('documents'),
         downloads: app.getPath('downloads'),
       }),
-      getHookSettingsPath: async (theme?: string) => {
+      getHookSettingsPath: async (provider: AgentProvider, theme?: string) => {
         await hookServer.ready; // 确保 settings 已带真实端口写好（listen 异步），否则 claude 拿到 :0 连不上
-        hookServer.setTheme(theme); // 让新启动的 claude 配色跟随 app 主题
-        return hookServer.settingsPath;
+        if (provider === 'claude') hookServer.setTheme(theme);
+        return hookServer.getSettingsPath(provider);
       },
       watchDir: (dir: string | null) => {
         watchDir(dir);

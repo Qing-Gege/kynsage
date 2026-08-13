@@ -3,6 +3,7 @@ import * as pty from 'node-pty';
 import { EventEmitter } from 'node:events';
 import * as os from 'node:os';
 import * as fs from 'node:fs';
+import * as path from 'node:path';
 import { toNativePath } from '@kynsage/shared-types';
 
 export interface PtySession {
@@ -63,11 +64,15 @@ export class PtyManager extends EventEmitter {
     if (!/UTF-8/i.test(env.LC_ALL || env.LC_CTYPE || env.LANG || '')) {
       env.LANG = process.platform === 'darwin' ? 'zh_CN.UTF-8' : 'C.UTF-8';
     }
+    // Grok Build 的官方安装器默认放到 ~/.grok/bin。GUI 应用常拿不到交互式 shell
+    // 写入的 PATH，主动补上后设置里的默认 `grok` 才能跨平台直接解析。
+    const grokBin = path.join(os.homedir(), '.grok', 'bin');
     // Windows: Electron 继承的 PATH 通常不含 npm 全局 bin，手动补上
     if (process.platform === 'win32') {
       const appdata = env.APPDATA || os.homedir();
       const npmGlobal = `${appdata}\\npm`;
       const extraPaths = [
+        grokBin,
         npmGlobal,
         `${env.LOCALAPPDATA || appdata}\\npm`,
         `${env.ProgramFiles || 'C:\\Program Files'}\\nodejs`,
@@ -75,6 +80,8 @@ export class PtyManager extends EventEmitter {
       ];
       const currentPath = env.PATH || env.Path || '';
       env.PATH = [...extraPaths, currentPath].join(';');
+    } else if (!env.PATH?.split(path.delimiter).includes(grokBin)) {
+      env.PATH = [grokBin, env.PATH || ''].filter(Boolean).join(path.delimiter);
     }
 
     const ptyInstance = pty.spawn(shellPath, shellArgs, {

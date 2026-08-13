@@ -2,9 +2,12 @@ import { useState } from 'react';
 import type { ReactElement } from 'react';
 import { HistoryMenu } from '../agents/HistoryMenu';
 import type { SessionRow } from '../agents/HistoryMenu';
+import type { AgentProvider } from '@kynsage/shared-types';
+import { AGENT_PROVIDER_LABEL } from '@kynsage/shared-types';
 
 interface Props {
   currentPath: string | null;
+  provider: AgentProvider;
   hist: SessionRow[];
   newLabel: string;
   /** true = 浮在终端之上的覆盖层变体（显示 × 关闭） */
@@ -17,7 +20,7 @@ interface Props {
 
 // 工作区 launcher —— 空态与按需覆盖层共用，保证两处动作一致
 export function WorkspaceLauncher({
-  currentPath, hist, newLabel, overlay, onClose, onNew, onRestore, onPickHistory,
+  currentPath, provider, hist, newLabel, overlay, onClose, onNew, onRestore, onPickHistory,
 }: Props): ReactElement {
   const [histOpen, setHistOpen] = useState(false);
   const hasHist = hist.length > 0;
@@ -37,6 +40,7 @@ export function WorkspaceLauncher({
         </svg>
       </div>
       <p className="ph-path mono" title={currentPath ?? undefined}>{currentPath || '（默认目录）'}</p>
+      <p className="ph-provider">{AGENT_PROVIDER_LABEL[provider]}</p>
       <p>{hasHist ? `这个文件夹有 ${hist.length} 次对话记录` : '尚无 Agent 通道'}</p>
       <div className="ph-actions">
         <button className="terminal-placeholder-cta" onClick={onNew} type="button">
@@ -54,6 +58,7 @@ export function WorkspaceLauncher({
               {currentPath && (
                 <HistoryMenu
                   cwd={currentPath}
+                  provider={provider}
                   open={histOpen}
                   onClose={() => setHistOpen(false)}
                   onPick={onPickHistory}
