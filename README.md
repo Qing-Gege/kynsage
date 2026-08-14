@@ -57,7 +57,7 @@
 
 **三步装好，跟装普通软件一模一样：**
 
-1. 点上面的按钮，到下载页面，下载 **`kynsage-x.x.x-win-x64.exe`** 这个文件（[也可以点这里直接下最新版](https://github.com/Qing-Gege/kynsage/releases/latest/download/kynsage-0.0.13-win-x64.exe)）
+1. 点上面的按钮，到下载页面，下载 **`kynsage-x.x.x-win-x64.exe`** 这个文件（[也可以点这里直接下最新版](https://github.com/Qing-Gege/kynsage/releases/latest/download/kynsage-0.0.14-win-x64.exe)）
 2. 双击它，一路「下一步」（可以自己选装到哪、要不要桌面图标）
 3. 装完桌面就有「狗头军师」图标，双击打开即可
 
@@ -65,9 +65,9 @@
 
 <br>
 
-**🍎 用 Mac 的朋友**（Apple 芯片 / M 系列）：下载 **`kynsage-0.0.13-mac-arm64.dmg`**（[点这里直接下](https://github.com/Qing-Gege/kynsage/releases/latest/download/kynsage-0.0.13-mac-arm64.dmg)），拖进「应用程序」即可。
+**🍎 用 Mac 的朋友**（Apple 芯片 / M 系列）：下载 **`kynsage-0.0.14-mac-arm64.dmg`**（[点这里直接下](https://github.com/Qing-Gege/kynsage/releases/latest/download/kynsage-0.0.14-mac-arm64.dmg)），拖进「应用程序」即可。
 
-> ⚠️ 首次打开若提示 **「已损坏 / 无法验证开发者」**，是因为这个包还没做苹果签名——**右键点图标 →「打开」→ 再点「打开」** 就行；若仍打不开，打开「终端」粘贴执行 `xattr -cr /Applications/狗头军师.app` 后再双击。
+> ⚠️ 当前版本尚未经过 Apple 公证。首次打开若提示 **「无法验证开发者」**，请在「应用程序」中右键点击「狗头军师」→「打开」→ 再点「打开」。
 
 **前提**：电脑里需要先装好 [Claude Code](https://claude.ai/code) 或 [Grok Build](https://docs.x.ai/build/overview)。默认使用 Claude Code，可在「设置 → 协作 → AI 引擎」切换；程序不在 PATH 时可在「高级」里指定位置。
 

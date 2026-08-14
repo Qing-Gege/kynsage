@@ -1,6 +1,6 @@
 {
   "name": "kynsage",
-  "version": "0.0.13",
+  "version": "0.0.14",
   "type": "module",
   "private": true,
   "description": "狗头军师 / Kynsage — AI Agent 指挥驾驶舱",
@@ -22,14 +22,15 @@
     "dev": "concurrently -k -n vite,main -c cyan,yellow \"pnpm --filter @kynsage/renderer dev\" \"wait-on http://localhost:5173 && pnpm --filter @kynsage/main dev\"",
     "build": "pnpm -r build",
     "build:win": "pnpm build && electron-builder --win --x64 --config electron-builder.json",
-    "build:mac": "pnpm build && electron-builder --mac --config electron-builder.json",
+    "build:mac": "pnpm build && electron-builder --mac --config electron-builder.json && pnpm verify:mac",
     "build:linux": "pnpm build && electron-builder --linux --config electron-builder.json",
     "gen:manifest": "node scripts/gen-update-manifest.mjs",
     "typecheck": "pnpm -r typecheck",
     "lint": "eslint .",
     "format": "prettier --write .",
     "test": "vitest run",
-    "test:watch": "vitest"
+    "test:watch": "vitest",
+    "verify:mac": "node scripts/verify-mac-signature.mjs"
   },
   "devDependencies": {
     "@types/node": "^22.10.0",

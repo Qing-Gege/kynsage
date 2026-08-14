@@ -45,6 +45,7 @@
     "target": ["dmg"],
     "category": "public.app-category.developer-tools",
     "icon": "build/icon.icns",
+    "identity": "-",
     "artifactName": "kynsage-${version}-mac-${arch}.${ext}",
     "hardenedRuntime": true,
     "gatekeeperAssess": false,
