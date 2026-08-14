@@ -1,6 +1,6 @@
 {
   "name": "kynsage",
-  "version": "0.0.12",
+  "version": "0.0.13",
   "type": "module",
   "private": true,
   "description": "狗头军师 / Kynsage — AI Agent 指挥驾驶舱",
